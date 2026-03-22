@@ -767,18 +767,31 @@ function downloadExcel(){
   const ws=XLSX.utils.json_to_sheet(ed),wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,"Court Data");
   const fname="Court_"+workDate.value+"_v"+upV+".xlsx";
-  // Android WebView: XLSX.writeFile often fails. Use base64 data URI.
-  try{
-    const b64=XLSX.write(wb,{bookType:"xlsx",type:"base64"});
-    const uri="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,"+b64;
-    const a=document.createElement("a");
-    a.href=uri; a.download=fname;
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a);
-  } catch(e){
-    // Last resort
-    XLSX.writeFile(wb,fname);
+
+  // Generate array buffer
+  const wbout=XLSX.write(wb,{bookType:"xlsx",type:"array"});
+  const blob=new Blob([wbout],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+
+  // 1. Web Share API — Android share sheet (Save to Downloads / WhatsApp etc.)
+  if(navigator.share && navigator.canShare){
+    const file=new File([blob],fname,{type:blob.type});
+    if(navigator.canShare({files:[file]})){
+      navigator.share({files:[file],title:fname})
+        .catch(e=>{ if(e.name!=="AbortError") fallbackDownload(blob,fname); });
+      return;
+    }
   }
+  // 2. Fallback: blob URL (browser)
+  fallbackDownload(blob,fname);
+}
+
+function fallbackDownload(blob,fname){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download=fname;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
 }
 
 // ════════════════════════════════════════
