@@ -844,58 +844,45 @@ function doDownload(fmt){
     "Next Date": String(r.nextdate||""),
     "Remark":    String(r.remark||"")
   }));
-
   const fname="Court_"+workDate.value+"_v"+upV;
 
   if(fmt==="csv"){
-    // Quote EVERY field — safest, no misplacement possible
     const keys=["Sr.No","Case No","Party Name","Section","PS","Sent","Received","Recv.Date","Next Date","Remark"];
     const qf=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
     const lines=[keys.map(qf).join(",")].concat(
       ed.map(r=>keys.map(k=>qf(r[k])).join(","))
     );
     const csv=lines.join("\r\n");
-    const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
-    shareOrDownload(blob,fname+".csv","text/csv");
+    // Direct data URI download — no share API, no blob URL
+    const dataUri="data:text/csv;charset=utf-8,\uFEFF"+encodeURIComponent(csv);
+    const a=document.createElement("a");
+    a.href=dataUri;
+    a.download=fname+".csv";
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    showToast("✅ CSV download ho gaya!");
     return;
   }
 
-  // XLSX — use base64 string → atob → Uint8Array (works in WebView)
+  // XLSX — base64 → Uint8Array → FileReader → data URI
   const ws=XLSX.utils.json_to_sheet(ed),wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,"Court Data");
   const b64=XLSX.write(wb,{bookType:"xlsx",type:"base64"});
-  // Convert base64 to binary
   const binStr=atob(b64);
   const bytes=new Uint8Array(binStr.length);
   for(let i=0;i<binStr.length;i++) bytes[i]=binStr.charCodeAt(i);
   const blob=new Blob([bytes],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
-  shareOrDownload(blob,fname+".xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const a=document.createElement("a");
+    a.href=e.target.result;
+    a.download=fname+".xlsx";
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    showToast("✅ Excel download ho gaya! WPS Office se open karo.");
+  };
+  reader.readAsDataURL(blob);
 }
 
 
-function shareOrDownload(blob,fname,mime){
-  // Web Share API (Android share sheet)
-  if(navigator.share && navigator.canShare){
-    const file=new File([blob],fname,{type:mime});
-    if(navigator.canShare({files:[file]})){
-      navigator.share({files:[file],title:fname})
-        .then(()=>showToast('✅ File share ho gaya!'))
-        .catch(e=>{ if(e.name!=='AbortError') blobDownload(blob,fname); });
-      return;
-    }
-  }
-  blobDownload(blob,fname);
-}
-
-function blobDownload(blob,fname){
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url; a.download=fname;
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a);
-  setTimeout(()=>URL.revokeObjectURL(url),3000);
-  showToast('✅ Download ho gaya — WPS Office ya Google Sheets se open karo');
-}
 
 // ════════════════════════════════════════
 // CFM DELETE OLD / BACKUP
@@ -913,39 +900,29 @@ async function deleteOldData(){
 async function exportBackup(){
   const stEl=document.getElementById("backupStatus");
   try{
-    const avk=await idbAVK(),vd={};for(const d of avk){const r=await idbTx(SV,'readonly',s=>s.get(d));if(r)vd[d]=r.versions;}
-    const amk=await idbAMK(),md={};for(const k of amk){const v=await idbGM(k);if(v!==null)md[k]=v;}
+    const avk=await idbAVK(),vd={};
+    for(const d of avk){const r=await idbTx(SV,'readonly',s=>s.get(d));if(r)vd[d]=r.versions;}
+    const amk=await idbAMK(),md={};
+    for(const k of amk){const v=await idbGM(k);if(v!==null)md[k]=v;}
     const allB=await idbAB();
     const bk={exportedAt:new Date().toISOString(),appVersion:"3.0",versionsStore:vd,metadataStore:md,bundlesStore:allB};
     const json=JSON.stringify(bk,null,2);
     const fname="CourtBundleBackup_"+new Date().toISOString().split("T")[0]+".json";
-    const blob=new Blob([json],{type:"application/json"});
-    // Use Web Share API for Android WebView
-    if(navigator.share && navigator.canShare){
-      const file=new File([blob],fname,{type:"application/json"});
-      if(navigator.canShare({files:[file]})){
-        await navigator.share({files:[file],title:fname});
-        stEl.textContent="✅ Backup share ho gaya!";stEl.className="smsg s-ok";
-        clearTimeout(stEl._t);stEl._t=setTimeout(()=>stEl.className="smsg",3000);
-        return;
-      }
-    }
-    // Fallback: base64 data URI
-    const reader=new FileReader();
-    reader.onload=e=>{
-      const a=document.createElement("a");
-      a.href=e.target.result;
-      a.download=fname;
-      document.body.appendChild(a);a.click();document.body.removeChild(a);
-    };
-    reader.readAsDataURL(blob);
-    stEl.textContent="✅ Backup export ho gaya!";stEl.className="smsg s-ok";
+    // data URI — works in WebView without share API
+    const dataUri="data:application/json;charset=utf-8,"+encodeURIComponent(json);
+    const a=document.createElement("a");
+    a.href=dataUri;
+    a.download=fname;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    stEl.textContent="✅ Backup export ho gaya!";
+    stEl.className="smsg s-ok";
     clearTimeout(stEl._t);stEl._t=setTimeout(()=>stEl.className="smsg",3000);
   }catch(err){
-    if(String(err).includes("AbortError"))return; // user cancelled share
-    stEl.textContent="❌ Export fail: "+err;stEl.className="smsg s-err";
+    stEl.textContent="❌ Export fail: "+err;
+    stEl.className="smsg s-err";
   }
 }
+
 async function importBackup(event){
   const stEl=document.getElementById("backupStatus"),file=event.target.files[0];event.target.value="";
   if(!file)return;
