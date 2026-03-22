@@ -853,17 +853,12 @@ function doDownload(fmt){
       ed.map(r=>keys.map(k=>qf(r[k])).join(","))
     );
     const csv=lines.join("\r\n");
-    // Direct data URI download — no share API, no blob URL
-    const dataUri="data:text/csv;charset=utf-8,\uFEFF"+encodeURIComponent(csv);
-    const a=document.createElement("a");
-    a.href=dataUri;
-    a.download=fname+".csv";
-    document.body.appendChild(a);a.click();document.body.removeChild(a);
-    showToast("✅ CSV download ho gaya!");
+    const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
+    triggerDownload(blob, fname+".csv");
     return;
   }
 
-  // XLSX — base64 → Uint8Array → FileReader → data URI
+  // XLSX
   const ws=XLSX.utils.json_to_sheet(ed),wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,"Court Data");
   const b64=XLSX.write(wb,{bookType:"xlsx",type:"base64"});
@@ -871,17 +866,23 @@ function doDownload(fmt){
   const bytes=new Uint8Array(binStr.length);
   for(let i=0;i<binStr.length;i++) bytes[i]=binStr.charCodeAt(i);
   const blob=new Blob([bytes],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+  triggerDownload(blob, fname+".xlsx");
+}
+
+// Universal download via FileReader base64 — works in Android WebView
+function triggerDownload(blob, fname){
   const reader=new FileReader();
   reader.onload=function(e){
     const a=document.createElement("a");
     a.href=e.target.result;
-    a.download=fname+".xlsx";
-    document.body.appendChild(a);a.click();document.body.removeChild(a);
-    showToast("✅ Excel download ho gaya! WPS Office se open karo.");
+    a.download=fname;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast("✅ "+fname+" download ho gaya!");
   };
   reader.readAsDataURL(blob);
 }
-
 
 
 // ════════════════════════════════════════
@@ -908,15 +909,18 @@ async function exportBackup(){
     const bk={exportedAt:new Date().toISOString(),appVersion:"3.0",versionsStore:vd,metadataStore:md,bundlesStore:allB};
     const json=JSON.stringify(bk,null,2);
     const fname="CourtBundleBackup_"+new Date().toISOString().split("T")[0]+".json";
-    // data URI — works in WebView without share API
-    const dataUri="data:application/json;charset=utf-8,"+encodeURIComponent(json);
-    const a=document.createElement("a");
-    a.href=dataUri;
-    a.download=fname;
-    document.body.appendChild(a);a.click();document.body.removeChild(a);
-    stEl.textContent="✅ Backup export ho gaya!";
-    stEl.className="smsg s-ok";
-    clearTimeout(stEl._t);stEl._t=setTimeout(()=>stEl.className="smsg",3000);
+    const blob=new Blob([json],{type:"application/json"});
+    const reader=new FileReader();
+    reader.onload=function(e){
+      const a=document.createElement("a");
+      a.href=e.target.result;
+      a.download=fname;
+      document.body.appendChild(a);a.click();document.body.removeChild(a);
+      stEl.textContent="✅ Backup download ho gaya!";
+      stEl.className="smsg s-ok";
+      clearTimeout(stEl._t);stEl._t=setTimeout(()=>stEl.className="smsg",3000);
+    };
+    reader.readAsDataURL(blob);
   }catch(err){
     stEl.textContent="❌ Export fail: "+err;
     stEl.className="smsg s-err";
