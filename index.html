@@ -484,27 +484,67 @@ function showToast(msg,type){
   t.textContent=msg;t.style.background=type==='w'?'#d97706':type==='d'?'#e03030':'#18a558';
   t.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',2800);
 }
-// ── Speech System ──
-// Note: No cancel(), no voice selection — Samsung TTS WebView fix
-function speak(msg){
-  if(!window.speechSynthesis) return;
-  try{
-    const u = new SpeechSynthesisUtterance(msg);
-    // Do NOT set u.voice — let Samsung TTS use default
-    // Do NOT call cancel() before speak — causes race in WebView
-    u.rate = 0.95;
-    u.pitch = 1;
-    u.volume = 1;
-    speechSynthesis.speak(u);
-  } catch(e){ console.warn("Speech:", e); }
+// ── Sound System (Web Audio API — works in WebView) ──
+let _audioCtx = null;
+function _getAudioCtx(){
+  if(!_audioCtx) _audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  return _audioCtx;
 }
-// Unlock speech on first touch (Android WebView requirement)
-document.addEventListener("touchstart", function(){
-  if(!window.speechSynthesis) return;
-  const u = new SpeechSynthesisUtterance("");
-  u.volume = 0;
-  speechSynthesis.speak(u);
-}, {once: true});
+
+// Play a tone: freq=Hz, dur=seconds, type=waveform
+function _beep(freq, dur, type, vol){
+  try{
+    const ctx = _getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = type||'sine';
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    gain.gain.setValueAtTime(vol||0.4, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+dur);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime+dur);
+  }catch(e){}
+}
+
+// Different sounds for different events
+function soundSent(){
+  // Two rising tones = success
+  _beep(600, 0.12, 'sine', 0.4);
+  setTimeout(()=>_beep(900, 0.18, 'sine', 0.4), 130);
+}
+function soundReceived(){
+  // Three tones = received
+  _beep(500, 0.10, 'sine', 0.35);
+  setTimeout(()=>_beep(700, 0.10, 'sine', 0.35), 110);
+  setTimeout(()=>_beep(900, 0.20, 'sine', 0.35), 220);
+}
+function soundError(){
+  // Low buzz = error
+  _beep(200, 0.30, 'square', 0.3);
+}
+function soundAlready(){
+  // Single mid tone = already done
+  _beep(440, 0.25, 'sine', 0.3);
+}
+function soundNextDate(){
+  // Pleasant chime = next date saved
+  _beep(800, 0.12, 'sine', 0.3);
+  setTimeout(()=>_beep(1000, 0.12, 'sine', 0.3), 130);
+  setTimeout(()=>_beep(1200, 0.25, 'sine', 0.3), 260);
+}
+
+// speak() = no-op (speechSynthesis not supported in Android WebView)
+function speak(msg){ /* WebView doesn't support speechSynthesis */ }
+
+// Unlock AudioContext on first touch
+document.addEventListener('touchstart', function(){
+  try{ _getAudioCtx().resume(); }catch(e){}
+},{once:true});
+document.addEventListener('click', function(){
+  try{ _getAudioCtx().resume(); }catch(e){}
+},{once:true});
 
 
 let activeTab='cfm';
@@ -627,7 +667,7 @@ async function uploadExcel(){
         const nv=vs?[...vs,upV]:[upV];
         await idbSV(workDate.value,nv);await saveCurV();await saveLocal();
         drawTable(getFiltered());updateDash();updateSU();
-        speak("Excel uploaded");alert("Upload ho gaya! ("+cData.length+" records)");excelFile.value="";
+        soundReceived();alert("Upload ho gaya! ("+cData.length+" records)");excelFile.value="";
       }catch(err){alert("Excel error: "+err.message);}
     };
     reader.readAsBinaryString(file);
@@ -719,21 +759,21 @@ async function manualAction(mode){
   if(!cn){showMS("⚠️ Case No enter karo","err");return;}
   if(!cData.length){showMS("⚠️ Data nahi. Excel upload karo","err");return;}
   const idx=cData.findIndex(r=>String(r.caseno).trim()===cn);
-  if(idx===-1){showMS("❌ Not Found: "+cn,"err");speak("Case not found");return;}
+  if(idx===-1){showMS("❌ Not Found: "+cn,"err");soundError();return;}
   const rec=cData[idx];
   if(mode==="SENT"){
-    if(rec.sent==="Sent"){showMS("ℹ️ Already SENT: "+cn,"info");speak("Already sent");return;}
+    if(rec.sent==="Sent"){showMS("ℹ️ Already SENT: "+cn,"info");soundAlready();return;}
     cData[idx].sent="Sent";cData[idx].searchableText=gSrch(cData[idx]);
-    showMS("✅ SENT: "+cn,"ok");speak("File sent");manualCaseInput.value="";
+    showMS("✅ SENT: "+cn,"ok");soundSent();manualCaseInput.value="";
     // Hide bundle entry
     await hideBundleEntry(cn);
   } else {
-    if(rec.sent!=="Sent"){showMS("❌ Pehle SENT karo","err");speak("File not sent yet");return;}
-    if(rec.received==="Received"){showMS("ℹ️ Already RECEIVED: "+cn,"info");speak("Already received");return;}
+    if(rec.sent!=="Sent"){showMS("❌ Pehle SENT karo","err");soundError();return;}
+    if(rec.received==="Received"){showMS("ℹ️ Already RECEIVED: "+cn,"info");soundAlready();return;}
     cData[idx].received="Received";
     cData[idx].receiveddate=new Date().toISOString().split("T")[0];
     lastRcvCase=cn;cData[idx].searchableText=gSrch(cData[idx]);
-    showMS("✅ RECEIVED: "+cn,"ok");speak("File received");manualCaseInput.value="";
+    showMS("✅ RECEIVED: "+cn,"ok");soundReceived();manualCaseInput.value="";
     openNDModal(cn);
   }
   drawTable(getFiltered());scrollToFile(cn);updateDash();await saveLocal();
@@ -769,7 +809,7 @@ async function saveNextDate(){
   if(idx!==-1){cData[idx].nextdate=d;cData[idx].searchableText=gSrch(cData[idx]);}
   document.getElementById("ndModal").classList.remove("on");
   const dt=new Date(d);
-  speak("Next date "+dt.getUTCDate()+" "+dt.toLocaleDateString("en-IN",{month:"long",timeZone:"UTC"}));
+  soundNextDate();
   drawTable(getFiltered());await saveLocal();
   lastRcvCase=null;
 }
@@ -1007,18 +1047,18 @@ function startCFMScan(mode){
 }
 async function handleCFMScan(code,mode){
   const idx=cData.findIndex(r=>r.caseno===code);
-  if(idx===-1){showSC('❌ Not Found: '+code,'#e03030');speak("File not found");return;}
+  if(idx===-1){showSC('❌ Not Found: '+code,'#e03030');soundError();return;}
   if(mode==='SENT'){
-    if(cData[idx].sent==="Sent"){showSC('ℹ️ Already Sent: '+code,'#d97706');speak("Already sent");return;}
+    if(cData[idx].sent==="Sent"){showSC('ℹ️ Already Sent: '+code,'#d97706');soundAlready();return;}
     cData[idx].sent="Sent";cData[idx].searchableText=gSrch(cData[idx]);
-    showSC('✅ SENT: '+code,'#18a558');speak("File sent");
+    showSC('✅ SENT: '+code,'#18a558');soundSent();
     await hideBundleEntry(code); // ← AUTO HIDE FROM BUNDLE
   } else {
-    if(cData[idx].sent!=="Sent"){showSC('❌ Pehle SENT karo: '+code,'#e03030');speak("File not sent yet");return;}
-    if(cData[idx].received==="Received"){showSC('ℹ️ Already Received: '+code,'#d97706');speak("Already received");return;}
+    if(cData[idx].sent!=="Sent"){showSC('❌ Pehle SENT karo: '+code,'#e03030');soundError();return;}
+    if(cData[idx].received==="Received"){showSC('ℹ️ Already Received: '+code,'#d97706');soundAlready();return;}
     cData[idx].received="Received";cData[idx].receiveddate=new Date().toISOString().split("T")[0];
     cData[idx].searchableText=gSrch(cData[idx]);lastRcvCase=code;
-    showSC('✅ RECEIVED: '+code,'#18a558');speak("File received");
+    showSC('✅ RECEIVED: '+code,'#18a558');soundReceived();
     setTimeout(()=>{closeScan();openNDModal(code);},800);
     drawTable(getFiltered());scrollToFile(code);updateDash();await saveLocal();
     return;
@@ -1341,14 +1381,14 @@ async function bAddFile(rawId, fromScan){
 
   if(fromScan){
     const rec=getCFMRecord(id);
-    if(!rec){ showSC('❌ CFM mein nahi hai: '+id,'#e03030'); speak("File CFM mein nahi hai"); return false; }
+    if(!rec){ showSC('❌ CFM mein nahi hai: '+id,'#e03030'); soundError(); return false; }
   }
 
   if(bFiles[id]&&!bFiles[id].hidden){
     const ex=bFiles[id];
     const msg=`"${id}" pehle se: Date ${ex.md}${ex.sd!=null?'/'+ex.sd:''} — ${dispCol(ex.col)}. Pehle hatao.`;
     fromScan?showSC(msg,'#e03030'):showToast(msg,'d');
-    speak("File pehle se hai"); return false;
+    soundAlready(); return false;
   }
 
   if(fromScan){
@@ -1361,7 +1401,7 @@ async function bAddFile(rawId, fromScan){
   const obj={id,md:bAMD,sd:bASD,col:bAC,at:Date.now(),st:'placed',hidden:false};
   bFiles[id]=obj; await idbSBn(obj);
   const sl=`${bAMD}${bASD!=null?'/'+bASD:''}-${dispCol(bAC)}`;
-  if(fromScan){ showSC('✅ '+id+' → Date '+sl,'#18a558'); speak(bAMD+' '+dispCol(bAC)); }
+  if(fromScan){ showSC('✅ '+id+' → Date '+sl,'#18a558'); soundSent(); }
   else showToast('✅ '+id+' → '+sl);
   bUpdateSP(); bRenderGrid();
   return true;
@@ -1402,7 +1442,7 @@ async function confirmMismatch(){
   const obj={id,md:bAMD,sd:bASD,col:bAC,at:Date.now(),st:'placed',hidden:false};
   bFiles[id]=obj; await idbSBn(obj);
   showSC('✅ '+id+` → Date ${bAMD}/${bASD}-${dispCol(bAC)}`,'#18a558');
-  speak(bAMD+' '+dispCol(bAC));
+  soundSent();
   bUpdateSP(); bRenderGrid();
   bASD=prevSD;
   document.getElementById('mmModal').classList.remove('on');
