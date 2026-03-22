@@ -485,49 +485,59 @@ function showToast(msg,type){
   t.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',2800);
 }
 // ── Speech System ──
-let _voicesReady=false;
-function _initVoices(){
-  if(_voicesReady)return;
-  const vs=speechSynthesis.getVoices();
-  if(vs.length>0){_voicesReady=true;}
+let _speechUnlocked=false;
+let _voicesList=[];
+
+function _loadVoices(){
+  const vs=window.speechSynthesis?speechSynthesis.getVoices():[];
+  if(vs.length>0)_voicesList=vs;
 }
 if(window.speechSynthesis){
-  speechSynthesis.onvoiceschanged=()=>{_voicesReady=true;};
-  _initVoices();
+  speechSynthesis.onvoiceschanged=()=>{ _voicesList=speechSynthesis.getVoices(); };
+  _loadVoices();
+  // Retry voice load after 1s (Android WebView loads voices late)
+  setTimeout(_loadVoices,1000);
+  setTimeout(_loadVoices,3000);
 }
+
+// Unlock speech on first user touch (Android WebView requires user gesture)
+function _unlockSpeech(){
+  if(_speechUnlocked||!window.speechSynthesis)return;
+  _speechUnlocked=true;
+  const u=new SpeechSynthesisUtterance("");
+  u.volume=0;
+  speechSynthesis.speak(u);
+  _loadVoices();
+}
+document.addEventListener("touchstart",_unlockSpeech,{once:true});
+document.addEventListener("click",_unlockSpeech,{once:true});
 
 function speak(msg,lang){
   if(!window.speechSynthesis)return;
   try{
-    // Cancel any ongoing speech
     speechSynthesis.cancel();
+    _loadVoices();
     const doSpeak=()=>{
       const u=new SpeechSynthesisUtterance(msg);
-      // Pick best available voice
       const voices=speechSynthesis.getVoices();
-      const preferred=voices.find(v=>v.lang==='hi-IN')||
-                       voices.find(v=>v.lang.startsWith('hi'))||
-                       voices.find(v=>v.lang==='en-IN')||
-                       voices.find(v=>v.lang.startsWith('en'))||
-                       voices[0];
-      if(preferred)u.voice=preferred;
-      u.lang=lang||(preferred?preferred.lang:'en-IN');
-      u.rate=0.95;
-      u.pitch=1;
-      u.volume=1;
+      const pick=voices.find(v=>v.lang==="hi-IN")||
+                  voices.find(v=>v.lang.startsWith("hi"))||
+                  voices.find(v=>v.lang==="en-IN")||
+                  voices.find(v=>v.lang.startsWith("en"))||
+                  (voices.length?voices[0]:null);
+      if(pick)u.voice=pick;
+      u.lang=lang||(pick?pick.lang:"en-IN");
+      u.rate=0.95;u.pitch=1;u.volume=1;
       speechSynthesis.speak(u);
-      // WebView bug: sometimes speech gets stuck — resume after short delay
-      setTimeout(()=>{
-        if(speechSynthesis.paused)speechSynthesis.resume();
-      },200);
+      setTimeout(()=>{ try{if(speechSynthesis.paused)speechSynthesis.resume();}catch(e){} },150);
     };
-    // If voices not loaded yet, wait a bit
-    if(speechSynthesis.getVoices().length===0){
-      setTimeout(doSpeak,300);
-    } else {
+    // Voices available? Speak now. Else wait.
+    if(speechSynthesis.getVoices().length>0){
       doSpeak();
+    } else {
+      setTimeout(doSpeak,500);
     }
-  }catch(e){console.warn('Speech error:',e);}
+  }catch(e){ console.warn("Speech:",e); }
 }
 let activeTab='cfm';
 function switchTab(t){
@@ -899,12 +909,34 @@ async function exportBackup(){
     const amk=await idbAMK(),md={};for(const k of amk){const v=await idbGM(k);if(v!==null)md[k]=v;}
     const allB=await idbAB();
     const bk={exportedAt:new Date().toISOString(),appVersion:"3.0",versionsStore:vd,metadataStore:md,bundlesStore:allB};
-    const blob=new Blob([JSON.stringify(bk,null,2)],{type:"application/json"});
-    const url=URL.createObjectURL(blob),a=document.createElement("a");
-    a.href=url;a.download="CourtBundleBackup_"+new Date().toISOString().split("T")[0]+".json";
-    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
-    stEl.textContent="✅ Backup export ho gaya!";stEl.className="smsg s-ok";clearTimeout(stEl._t);stEl._t=setTimeout(()=>stEl.className="smsg",3000);
-  }catch(err){stEl.textContent="❌ Export fail: "+err;stEl.className="smsg s-err";}
+    const json=JSON.stringify(bk,null,2);
+    const fname="CourtBundleBackup_"+new Date().toISOString().split("T")[0]+".json";
+    const blob=new Blob([json],{type:"application/json"});
+    // Use Web Share API for Android WebView
+    if(navigator.share && navigator.canShare){
+      const file=new File([blob],fname,{type:"application/json"});
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],title:fname});
+        stEl.textContent="✅ Backup share ho gaya!";stEl.className="smsg s-ok";
+        clearTimeout(stEl._t);stEl._t=setTimeout(()=>stEl.className="smsg",3000);
+        return;
+      }
+    }
+    // Fallback: base64 data URI
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const a=document.createElement("a");
+      a.href=e.target.result;
+      a.download=fname;
+      document.body.appendChild(a);a.click();document.body.removeChild(a);
+    };
+    reader.readAsDataURL(blob);
+    stEl.textContent="✅ Backup export ho gaya!";stEl.className="smsg s-ok";
+    clearTimeout(stEl._t);stEl._t=setTimeout(()=>stEl.className="smsg",3000);
+  }catch(err){
+    if(String(err).includes("AbortError"))return; // user cancelled share
+    stEl.textContent="❌ Export fail: "+err;stEl.className="smsg s-err";
+  }
 }
 async function importBackup(event){
   const stEl=document.getElementById("backupStatus"),file=event.target.files[0];event.target.value="";
