@@ -485,60 +485,28 @@ function showToast(msg,type){
   t.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',2800);
 }
 // ── Speech System ──
-let _speechUnlocked=false;
-let _voicesList=[];
-
-function _loadVoices(){
-  const vs=window.speechSynthesis?speechSynthesis.getVoices():[];
-  if(vs.length>0)_voicesList=vs;
-}
-if(window.speechSynthesis){
-  speechSynthesis.onvoiceschanged=()=>{ _voicesList=speechSynthesis.getVoices(); };
-  _loadVoices();
-  // Retry voice load after 1s (Android WebView loads voices late)
-  setTimeout(_loadVoices,1000);
-  setTimeout(_loadVoices,3000);
-}
-
-// Unlock speech on first user touch (Android WebView requires user gesture)
-function _unlockSpeech(){
-  if(_speechUnlocked||!window.speechSynthesis)return;
-  _speechUnlocked=true;
-  const u=new SpeechSynthesisUtterance("");
-  u.volume=0;
-  speechSynthesis.speak(u);
-  _loadVoices();
-}
-document.addEventListener("touchstart",_unlockSpeech,{once:true});
-document.addEventListener("click",_unlockSpeech,{once:true});
-
-function speak(msg,lang){
-  if(!window.speechSynthesis)return;
+// Note: No cancel(), no voice selection — Samsung TTS WebView fix
+function speak(msg){
+  if(!window.speechSynthesis) return;
   try{
-    speechSynthesis.cancel();
-    _loadVoices();
-    const doSpeak=()=>{
-      const u=new SpeechSynthesisUtterance(msg);
-      const voices=speechSynthesis.getVoices();
-      const pick=voices.find(v=>v.lang==="hi-IN")||
-                  voices.find(v=>v.lang.startsWith("hi"))||
-                  voices.find(v=>v.lang==="en-IN")||
-                  voices.find(v=>v.lang.startsWith("en"))||
-                  (voices.length?voices[0]:null);
-      if(pick)u.voice=pick;
-      u.lang=lang||(pick?pick.lang:"en-IN");
-      u.rate=0.95;u.pitch=1;u.volume=1;
-      speechSynthesis.speak(u);
-      setTimeout(()=>{ try{if(speechSynthesis.paused)speechSynthesis.resume();}catch(e){} },150);
-    };
-    // Voices available? Speak now. Else wait.
-    if(speechSynthesis.getVoices().length>0){
-      doSpeak();
-    } else {
-      setTimeout(doSpeak,500);
-    }
-  }catch(e){ console.warn("Speech:",e); }
+    const u = new SpeechSynthesisUtterance(msg);
+    // Do NOT set u.voice — let Samsung TTS use default
+    // Do NOT call cancel() before speak — causes race in WebView
+    u.rate = 0.95;
+    u.pitch = 1;
+    u.volume = 1;
+    speechSynthesis.speak(u);
+  } catch(e){ console.warn("Speech:", e); }
 }
+// Unlock speech on first touch (Android WebView requirement)
+document.addEventListener("touchstart", function(){
+  if(!window.speechSynthesis) return;
+  const u = new SpeechSynthesisUtterance("");
+  u.volume = 0;
+  speechSynthesis.speak(u);
+}, {once: true});
+
+
 let activeTab='cfm';
 function switchTab(t){
   activeTab=t;
@@ -1393,7 +1361,7 @@ async function bAddFile(rawId, fromScan){
   const obj={id,md:bAMD,sd:bASD,col:bAC,at:Date.now(),st:'placed',hidden:false};
   bFiles[id]=obj; await idbSBn(obj);
   const sl=`${bAMD}${bASD!=null?'/'+bASD:''}-${dispCol(bAC)}`;
-  if(fromScan){ showSC('✅ '+id+' → Date '+sl,'#18a558'); speak(bAMD+' '+dispCol(bAC),'hi-IN'); }
+  if(fromScan){ showSC('✅ '+id+' → Date '+sl,'#18a558'); speak(bAMD+' '+dispCol(bAC)); }
   else showToast('✅ '+id+' → '+sl);
   bUpdateSP(); bRenderGrid();
   return true;
@@ -1434,7 +1402,7 @@ async function confirmMismatch(){
   const obj={id,md:bAMD,sd:bASD,col:bAC,at:Date.now(),st:'placed',hidden:false};
   bFiles[id]=obj; await idbSBn(obj);
   showSC('✅ '+id+` → Date ${bAMD}/${bASD}-${dispCol(bAC)}`,'#18a558');
-  speak(bAMD+' '+dispCol(bAC),'hi-IN');
+  speak(bAMD+' '+dispCol(bAC));
   bUpdateSP(); bRenderGrid();
   bASD=prevSD;
   document.getElementById('mmModal').classList.remove('on');
