@@ -867,24 +867,92 @@ function doDownload(fmt){
   openBlob(blob,fname+".xlsx");
 }
 
-function dlBlob(blob,fname){
-  openBlob(blob,fname);
+function dlBlob(blob,fname){ openBlob(blob,fname); }
+
+// Read blob as text and copy/show
+function openBlob(blob,fname){
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const dataStr=e.target.result; // base64 data URI or text
+
+    // For JSON and CSV — read as text and show copy panel
+    if(fname.endsWith('.json')||fname.endsWith('.csv')){
+      const textReader=new FileReader();
+      textReader.onload=function(te){
+        showCopyPanel(te.target.result, fname);
+      };
+      textReader.readAsText(blob,'utf-8');
+      return;
+    }
+    // For xlsx — try URL.createObjectURL
+    try{
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url; a.download=fname; a.style.display='none';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(()=>URL.revokeObjectURL(url),10000);
+      showToast('✅ Excel download ho gaya!');
+    }catch(e){ showToast('❌ '+e.message,'d'); }
+  };
+  reader.readAsDataURL(blob);
 }
 
-// Open blob in new tab — browser handles save/download
-function openBlob(blob,fname){
+// Show data in full screen panel with copy button
+function showCopyPanel(text, fname){
+  // Remove existing panel
+  const old=document.getElementById('copy-panel');
+  if(old) old.remove();
+
+  const panel=document.createElement('div');
+  panel.id='copy-panel';
+  panel.style.cssText='position:fixed;inset:0;z-index:9999;background:#fff;display:flex;flex-direction:column;padding:0';
+
+  panel.innerHTML=`
+    <div style="background:#4f46e5;color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <div>
+        <div style="font-weight:700;font-size:15px">📋 ${fname}</div>
+        <div style="font-size:11px;opacity:.8">Copy karke WhatsApp/Gmail mein save karo</div>
+      </div>
+      <button onclick="document.getElementById('copy-panel').remove()" style="background:#ffffff30;border:none;color:#fff;border-radius:6px;padding:6px 12px;font-size:13px;font-weight:600">✕ Close</button>
+    </div>
+    <div style="padding:10px;display:flex;gap:8px;flex-shrink:0;border-bottom:1px solid #e2e8f0">
+      <button id="copy-btn" onclick="doCopy()" style="flex:1;background:#10b981;border:none;color:#fff;border-radius:8px;padding:11px;font-size:14px;font-weight:700">📋 Copy All</button>
+      <button onclick="document.getElementById('copy-panel').remove()" style="background:#94a3b8;border:none;color:#fff;border-radius:8px;padding:11px 14px;font-size:13px;font-weight:600">Cancel</button>
+    </div>
+    <textarea id="copy-area" readonly style="flex:1;width:100%;border:none;outline:none;padding:12px;font-size:11px;font-family:monospace;resize:none;color:#1e293b;background:#f8fafc">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+    <div style="padding:10px;background:#fef9c3;font-size:12px;color:#92400e;flex-shrink:0">
+      💡 Copy ke baad: WhatsApp → New Message → Paste → .txt file attach hogi. Ya Gmail mein paste karke email karo khud ko.
+    </div>`;
+
+  document.body.appendChild(panel);
+
+  // Store text for copy
+  panel._text=text;
+}
+
+function doCopy(){
+  const panel=document.getElementById('copy-panel');
+  const text=panel._text;
+  const btn=document.getElementById('copy-btn');
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>{
+      btn.textContent='✅ Copied!';btn.style.background='#059669';
+      showToast('✅ Copy ho gaya! Ab paste karo.');
+    }).catch(()=>fallbackCopy(text,btn));
+  } else {
+    fallbackCopy(text,btn);
+  }
+}
+
+function fallbackCopy(text,btn){
+  const ta=document.getElementById('copy-area');
+  ta.select();
   try{
-    const url=URL.createObjectURL(blob);
-    // _blank opens in device browser (Chrome) where download works
-    const opened=window.open(url,"_blank");
-    if(!opened){
-      // Fallback: navigate current window
-      window.location.href=url;
-    }
-    showToast("✅ Browser mein khul raha hai — Save karo");
-    setTimeout(()=>URL.revokeObjectURL(url),30000);
+    document.execCommand('copy');
+    btn.textContent='✅ Copied!';btn.style.background='#059669';
+    showToast('✅ Copy ho gaya! Ab paste karo.');
   }catch(e){
-    showToast("❌ "+e.message,"d");
+    showToast('⚠ Manual select karo aur copy karo','w');
   }
 }
 
