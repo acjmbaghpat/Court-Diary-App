@@ -759,9 +759,26 @@ async function saveNextDate(){
 // ════════════════════════════════════════
 function downloadExcel(){
   if(!cData.length){alert("Data nahi hai");return;}
-  const ed=cData.map(r=({"Sr.No":r.srno,"Case No":r.caseno,"Party Name":r.partyname,"Section":r.section,"PS":r.ps,"Sent":r.sent,"Received":r.received,"Recv.Date":r.receiveddate,"Next Date":r.nextdate,"Remark":r.remark}));
-  const ws=XLSX.utils.json_to_sheet(ed),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Court Data");
-  XLSX.writeFile(wb,"Court_"+workDate.value+"_v"+upV+".xlsx");
+  const ed=cData.map(r=>({
+    "Sr.No":r.srno,"Case No":r.caseno,"Party Name":r.partyname,
+    "Section":r.section,"PS":r.ps,"Sent":r.sent,"Received":r.received,
+    "Recv.Date":r.receiveddate,"Next Date":r.nextdate,"Remark":r.remark
+  }));
+  const ws=XLSX.utils.json_to_sheet(ed),wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"Court Data");
+  const fname="Court_"+workDate.value+"_v"+upV+".xlsx";
+  // Android WebView: XLSX.writeFile often fails. Use base64 data URI.
+  try{
+    const b64=XLSX.write(wb,{bookType:"xlsx",type:"base64"});
+    const uri="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,"+b64;
+    const a=document.createElement("a");
+    a.href=uri; a.download=fname;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+  } catch(e){
+    // Last resort
+    XLSX.writeFile(wb,fname);
+  }
 }
 
 // ════════════════════════════════════════
