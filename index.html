@@ -759,39 +759,72 @@ async function saveNextDate(){
 // ════════════════════════════════════════
 function downloadExcel(){
   if(!cData.length){alert("Data nahi hai");return;}
+  // Show format choice
+  showDLModal();
+}
+
+function showDLModal(){
+  document.getElementById('dl-modal').classList.add('on');
+}
+function closeDLModal(){
+  document.getElementById('dl-modal').classList.remove('on');
+}
+
+function doDownload(fmt){
+  closeDLModal();
   const ed=cData.map(r=>({
     "Sr.No":r.srno,"Case No":r.caseno,"Party Name":r.partyname,
     "Section":r.section,"PS":r.ps,"Sent":r.sent,"Received":r.received,
     "Recv.Date":r.receiveddate,"Next Date":r.nextdate,"Remark":r.remark
   }));
+
+  const fname="Court_"+workDate.value+"_v"+upV;
+
+  if(fmt==="csv"){
+    const keys=Object.keys(ed[0]);
+    const escape=v=>{
+      const s=String(v==null?"":v).replace(/"/g,'""');
+      return (s.indexOf(",")>=0||s.indexOf('"')>=0)?'"'+s+'"':s;
+    };
+    const lines=[keys.map(escape).join(",")].concat(
+      ed.map(r=>keys.map(k=>escape(r[k])).join(","))
+    );
+    const csv=lines.join("\r\n");
+    const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
+    shareOrDownload(blob,fname+".csv","text/csv");
+    return;
+  }
+
   const ws=XLSX.utils.json_to_sheet(ed),wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,"Court Data");
-  const fname="Court_"+workDate.value+"_v"+upV+".xlsx";
-
-  // Generate array buffer
   const wbout=XLSX.write(wb,{bookType:"xlsx",type:"array"});
   const blob=new Blob([wbout],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+  shareOrDownload(blob,fname+".xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+}
 
-  // 1. Web Share API — Android share sheet (Save to Downloads / WhatsApp etc.)
+
+function shareOrDownload(blob,fname,mime){
+  // Web Share API (Android share sheet)
   if(navigator.share && navigator.canShare){
-    const file=new File([blob],fname,{type:blob.type});
+    const file=new File([blob],fname,{type:mime});
     if(navigator.canShare({files:[file]})){
       navigator.share({files:[file],title:fname})
-        .catch(e=>{ if(e.name!=="AbortError") fallbackDownload(blob,fname); });
+        .then(()=>showToast('✅ File share ho gaya!'))
+        .catch(e=>{ if(e.name!=='AbortError') blobDownload(blob,fname); });
       return;
     }
   }
-  // 2. Fallback: blob URL (browser)
-  fallbackDownload(blob,fname);
+  blobDownload(blob,fname);
 }
 
-function fallbackDownload(blob,fname){
+function blobDownload(blob,fname){
   const url=URL.createObjectURL(blob);
-  const a=document.createElement("a");
+  const a=document.createElement('a');
   a.href=url; a.download=fname;
   document.body.appendChild(a); a.click();
   document.body.removeChild(a);
-  setTimeout(()=>URL.revokeObjectURL(url),2000);
+  setTimeout(()=>URL.revokeObjectURL(url),3000);
+  showToast('✅ Download ho gaya — WPS Office ya Google Sheets se open karo');
 }
 
 // ════════════════════════════════════════
@@ -1435,5 +1468,30 @@ function bFCHTML(f,showLoc){
 }
 
 </script>
+
+<!-- Download Format Modal -->
+<div class="modal center" id="dl-modal">
+  <div class="msh" style="max-width:340px">
+    <div class="mt">📥 Download Format Choose Karo</div>
+    <div class="msub">Kaun sa format chahiye?</div>
+
+    <button class="btn btn-s" onclick="doDownload('csv')" style="margin-top:8px">
+      📄 CSV — Sabse compatible<br>
+      <span style="font-size:11px;font-weight:400;opacity:.85">Bina kisi app ke khulta hai ✅</span>
+    </button>
+
+    <button class="btn" onclick="doDownload('xlsx')" style="margin-top:10px">
+      📊 Excel (.xlsx)<br>
+      <span style="font-size:11px;font-weight:400;opacity:.85">WPS Office / Google Sheets chahiye</span>
+    </button>
+
+    <div style="background:#fff7ed;border:1px solid #f59e0b;border-radius:8px;padding:10px 12px;margin-top:12px;font-size:12px;color:#92400e">
+      💡 <strong>Tip:</strong> Pehli baar <strong>CSV</strong> try karo — seedha khul jaata hai.<br>
+      Excel ke liye <strong>WPS Office</strong> free mein install karo.
+    </div>
+
+    <button class="btn btn-g" onclick="closeDLModal()" style="margin-top:10px">Cancel</button>
+  </div>
+</div>
 </body>
 </html>
