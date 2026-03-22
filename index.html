@@ -484,8 +484,50 @@ function showToast(msg,type){
   t.textContent=msg;t.style.background=type==='w'?'#d97706':type==='d'?'#e03030':'#18a558';
   t.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',2800);
 }
+// ── Speech System ──
+let _voicesReady=false;
+function _initVoices(){
+  if(_voicesReady)return;
+  const vs=speechSynthesis.getVoices();
+  if(vs.length>0){_voicesReady=true;}
+}
+if(window.speechSynthesis){
+  speechSynthesis.onvoiceschanged=()=>{_voicesReady=true;};
+  _initVoices();
+}
+
 function speak(msg,lang){
-  try{const u=new SpeechSynthesisUtterance(msg);u.lang=lang||'en-IN';u.rate=1;speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){}
+  if(!window.speechSynthesis)return;
+  try{
+    // Cancel any ongoing speech
+    speechSynthesis.cancel();
+    const doSpeak=()=>{
+      const u=new SpeechSynthesisUtterance(msg);
+      // Pick best available voice
+      const voices=speechSynthesis.getVoices();
+      const preferred=voices.find(v=>v.lang==='hi-IN')||
+                       voices.find(v=>v.lang.startsWith('hi'))||
+                       voices.find(v=>v.lang==='en-IN')||
+                       voices.find(v=>v.lang.startsWith('en'))||
+                       voices[0];
+      if(preferred)u.voice=preferred;
+      u.lang=lang||(preferred?preferred.lang:'en-IN');
+      u.rate=0.95;
+      u.pitch=1;
+      u.volume=1;
+      speechSynthesis.speak(u);
+      // WebView bug: sometimes speech gets stuck — resume after short delay
+      setTimeout(()=>{
+        if(speechSynthesis.paused)speechSynthesis.resume();
+      },200);
+    };
+    // If voices not loaded yet, wait a bit
+    if(speechSynthesis.getVoices().length===0){
+      setTimeout(doSpeak,300);
+    } else {
+      doSpeak();
+    }
+  }catch(e){console.warn('Speech error:',e);}
 }
 let activeTab='cfm';
 function switchTab(t){
