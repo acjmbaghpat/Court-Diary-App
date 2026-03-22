@@ -773,21 +773,26 @@ function closeDLModal(){
 function doDownload(fmt){
   closeDLModal();
   const ed=cData.map(r=>({
-    "Sr.No":r.srno,"Case No":r.caseno,"Party Name":r.partyname,
-    "Section":r.section,"PS":r.ps,"Sent":r.sent,"Received":r.received,
-    "Recv.Date":r.receiveddate,"Next Date":r.nextdate,"Remark":r.remark
+    "Sr.No":     String(r.srno||""),
+    "Case No":   String(r.caseno||""),
+    "Party Name":String(r.partyname||""),
+    "Section":   String(r.section||""),
+    "PS":        String(r.ps||""),
+    "Sent":      String(r.sent||""),
+    "Received":  String(r.received||""),
+    "Recv.Date": String(r.receiveddate||""),
+    "Next Date": String(r.nextdate||""),
+    "Remark":    String(r.remark||"")
   }));
 
   const fname="Court_"+workDate.value+"_v"+upV;
 
   if(fmt==="csv"){
-    const keys=Object.keys(ed[0]);
-    const escape=v=>{
-      const s=String(v==null?"":v).replace(/"/g,'""');
-      return (s.indexOf(",")>=0||s.indexOf('"')>=0)?'"'+s+'"':s;
-    };
-    const lines=[keys.map(escape).join(",")].concat(
-      ed.map(r=>keys.map(k=>escape(r[k])).join(","))
+    // Quote EVERY field — safest, no misplacement possible
+    const keys=["Sr.No","Case No","Party Name","Section","PS","Sent","Received","Recv.Date","Next Date","Remark"];
+    const qf=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+    const lines=[keys.map(qf).join(",")].concat(
+      ed.map(r=>keys.map(k=>qf(r[k])).join(","))
     );
     const csv=lines.join("\r\n");
     const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
@@ -795,10 +800,15 @@ function doDownload(fmt){
     return;
   }
 
+  // XLSX — use base64 string → atob → Uint8Array (works in WebView)
   const ws=XLSX.utils.json_to_sheet(ed),wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,"Court Data");
-  const wbout=XLSX.write(wb,{bookType:"xlsx",type:"array"});
-  const blob=new Blob([wbout],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+  const b64=XLSX.write(wb,{bookType:"xlsx",type:"base64"});
+  // Convert base64 to binary
+  const binStr=atob(b64);
+  const bytes=new Uint8Array(binStr.length);
+  for(let i=0;i<binStr.length;i++) bytes[i]=binStr.charCodeAt(i);
+  const blob=new Blob([bytes],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
   shareOrDownload(blob,fname+".xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 }
 
