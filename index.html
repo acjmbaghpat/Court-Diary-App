@@ -1,1635 +1,1607 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Court Manager</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh;padding-bottom:80px}
-button{cursor:pointer;font-family:inherit}
-:root{
-  --p:#4f46e5;--ph:#4338ca;--bg:#f8fafc;--sur:#fff;
-  --txt:#1e293b;--mu:#64748b;--bdr:#e2e8f0;
-  --dan:#ef4444;--danh:#dc2626;--suc:#10b981;--such:#059669;
-  --amb:#f59e0b;--ambh:#d97706;--inf:#0e7ac4;
-  --rl:16px;--rm:12px;
-  --ss:0 1px 3px rgba(0,0,0,.1);
-  --sm:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06);
-}
-/* ── APP HEADER ── */
-#app-hdr{background:var(--p);color:#fff;padding:13px 16px 0;position:sticky;top:0;z-index:200;box-shadow:var(--sm)}
-#app-hdr-title{font-size:17px;font-weight:700;text-align:center;padding-bottom:10px}
-#tab-bar{display:flex;border-top:1px solid #ffffff30}
-.tab-btn{flex:1;padding:11px 8px;background:none;border:none;color:#ffffffaa;font-size:14px;font-weight:600;border-bottom:3px solid transparent;transition:all .15s}
-.tab-btn.on{color:#fff;border-bottom:3px solid #fff;background:#ffffff18}
-/* ── TAB CONTENT ── */
-.tab-c{display:none}.tab-c.on{display:block}
-/* ── LAYOUT ── */
-.cnt{padding:14px;max-width:1000px;margin:0 auto}
-.sec{background:var(--sur);padding:18px;margin-bottom:14px;border-radius:var(--rl);box-shadow:var(--ss);border:1px solid var(--bdr)}
-h3{margin:0 0 12px;font-size:15px;color:var(--txt);display:flex;align-items:center;gap:8px}
-/* ── INPUTS ── */
-input[type=text],input[type=date],select{
-  width:100%;padding:12px 14px;margin-top:6px;font-size:15px;
-  border-radius:var(--rm);border:1.5px solid var(--bdr);
-  background:var(--bg);color:var(--txt);font-family:inherit;outline:none;
-  transition:border-color .2s,box-shadow .2s;appearance:none;
-}
-input[type=text]:focus,input[type=date]:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(79,70,229,.15);background:var(--sur);}
-input[type=file]{width:100%;padding:10px;margin-top:6px;font-size:14px;border-radius:var(--rm);border:1.5px solid var(--bdr);background:var(--sur)}
-/* ── BUTTONS ── */
-.btn{width:100%;padding:13px 16px;margin-top:10px;font-size:14px;font-weight:600;border-radius:var(--rm);border:none;background:var(--p);color:#fff;box-shadow:var(--sm);transition:transform .1s,background .2s;display:flex;justify-content:center;align-items:center;gap:8px}
-.btn:active{transform:scale(.98)}.btn:hover{background:var(--ph)}
-.btn-d{background:var(--dan)}.btn-d:hover{background:var(--danh)}
-.btn-s{background:var(--suc)}.btn-s:hover{background:var(--such)}
-.btn-a{background:var(--amb)}.btn-a:hover{background:var(--ambh)}
-.btn-g{background:#94a3b8}.btn-g:hover{background:#64748b}
-.btn-pu{background:#7c3aed}.btn-pu:hover{background:#6d28d9}
-.btn-opu{background:transparent;border:2px solid #7c3aed;color:#7c3aed;box-shadow:none}.btn-opu:hover{background:#ede9fe}
-.btn-sm{width:auto;padding:6px 14px;font-size:12px;margin-top:0}
-/* ── DASHBOARD ── */
-.dash{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
-@media(min-width:600px){.dash{grid-template-columns:repeat(4,1fr)}}
-.card{background:var(--sur);padding:14px 10px;border-radius:var(--rl);text-align:center;font-weight:600;font-size:13px;color:var(--mu);box-shadow:var(--ss);border:1px solid var(--bdr)}
-.card span{font-size:22px;color:var(--p);font-weight:700;display:block}
-/* ── TABLE ── */
-.twrap{background:var(--sur);border-radius:var(--rl);overflow-x:auto;box-shadow:var(--ss);border:1px solid var(--bdr);margin-bottom:14px}
-table{width:100%;border-collapse:collapse;min-width:900px;text-align:left}
-th,td{border-bottom:1px solid var(--bdr);padding:11px 14px;font-size:13px}
-th{background:#f1f5f9;font-weight:600;position:sticky;top:0;z-index:10}
-td input{width:100%;border:1px solid transparent;padding:7px;font-size:13px;background:transparent;border-radius:6px}
-td input:focus{background:var(--sur);border:1px solid var(--p)}
-tr:last-child td{border-bottom:none}
-tr:hover{background:#f8fafc}
-/* ── FILTER TABS ── */
-.ftabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.ftab{flex:1;min-width:0;padding:9px 8px;border-radius:var(--rm);border:2px solid var(--bdr);background:var(--bg);color:var(--mu);font-size:12px;font-weight:600;cursor:pointer;text-align:center;box-shadow:none;margin-top:0;display:flex;flex-direction:column;align-items:center;gap:2px}
-.ftab .tc{font-size:17px;font-weight:700}
-.ft-all{background:#ede9fe;border-color:var(--p);color:var(--p)}
-.ft-ps{background:#fff7ed;border-color:var(--amb);color:var(--ambh)}
-.ft-pr{background:#f0fdf4;border-color:var(--suc);color:var(--such)}
-/* ── DROPDOWN ── */
-.dwrap{position:relative}
-#caseDD{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--sur);border:1.5px solid var(--p);border-radius:var(--rm);max-height:220px;overflow-y:auto;z-index:500;box-shadow:var(--sm);display:none}
-.di{padding:10px 14px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--bdr)}
-.di:last-child{border-bottom:none}.di:hover,.di.act{background:#ede9fe}
-.di-cn{font-weight:700;color:var(--p);font-size:14px}.di-pt{color:var(--mu);font-size:11px;margin-top:2px}
-/* ── STATUS ── */
-.smsg{margin-top:10px;padding:10px 14px;border-radius:var(--rm);font-size:14px;font-weight:600;display:none}
-.s-ok{background:#dcfce7;color:#15803d;border:1px solid #86efac;display:block}
-.s-err{background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;display:block}
-.s-info{background:#ede9fe;color:var(--p);border:1px solid #c4b5fd;display:block}
-.s-warn{background:#fff7ed;color:#92400e;border:1px solid #fcd34d;display:block}
-/* ── GRID 2 ── */
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-.g2 .btn{margin-top:0}
-/* ── FLOAT BTNS ── */
-.flt{position:fixed;bottom:90px;right:14px;display:flex;flex-direction:column;gap:8px;z-index:100}
-.flt .btn{width:145px;box-shadow:0 6px 18px rgba(0,0,0,.25);margin-top:0;font-size:13px;padding:12px 10px}
-/* ── SCANNER OVERLAY ── */
-#scan-ov{display:none;position:fixed;inset:0;z-index:600;background:#000000f0;flex-direction:column;align-items:center;justify-content:center;gap:14px}
-#scan-ov.on{display:flex}
-#scan-box{position:relative;width:min(88vw,320px);height:min(88vw,320px);border-radius:16px;overflow:hidden;box-shadow:0 8px 48px #000a;background:#111}
-#scan-vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
-.cr,.cr2{position:absolute;inset:0;pointer-events:none}
-.cr::before,.cr::after,.cr2::before,.cr2::after{content:'';position:absolute;width:34px;height:34px;border-color:#f0a500;border-style:solid}
-.cr::before{top:12px;left:12px;border-width:3px 0 0 3px;border-radius:5px 0 0 0}
-.cr::after{top:12px;right:12px;border-width:3px 3px 0 0;border-radius:0 5px 0 0}
-.cr2::before{bottom:12px;left:12px;border-width:0 0 3px 3px;border-radius:0 0 0 5px}
-.cr2::after{bottom:12px;right:12px;border-width:0 3px 3px 0;border-radius:0 0 5px 0}
-@keyframes sl{0%{top:12%}100%{top:84%}}
-.sline{position:absolute;left:8%;right:8%;height:2.5px;pointer-events:none;background:linear-gradient(90deg,transparent,#f0a500,#fff8,#f0a500,transparent);animation:sl 2s ease-in-out infinite alternate;box-shadow:0 0 8px #f0a500aa}
-#qr-hl{position:absolute;border:2.5px solid #18a558;border-radius:6px;box-shadow:0 0 12px #18a55888;display:none;pointer-events:none}
-@keyframes flash{0%{opacity:.55}100%{opacity:0}}
-#scan-flash{position:absolute;inset:0;background:#fff;pointer-events:none;opacity:0}
-#scan-flash.go{animation:flash .4s ease-out forwards}
-#scan-sb{position:absolute;bottom:0;left:0;right:0;background:#000000cc;color:#fff;text-align:center;font-size:12px;padding:9px 12px;font-weight:500}
-#scan-card{display:none;width:min(88vw,320px);border-radius:12px;padding:12px 18px;color:#fff;font-size:14px;font-weight:700;text-align:center}
-#scan-ctrl{width:min(88vw,320px);display:flex;flex-direction:column;gap:9px}
-#scan-ml{color:#ffffffaa;font-size:12px;text-align:center;background:#ffffff12;border-radius:8px;padding:8px}
-#cont-btn{background:#ffffff18;border:1.5px solid #ffffff44;color:#fff;border-radius:10px;padding:10px;font-size:13px;font-weight:600}
-#cont-btn.on{background:#18a55830;border-color:#18a558;color:#5effa0}
-#scan-close{background:#ffffff18;border:1.5px solid #ffffff44;color:#fff;border-radius:10px;padding:12px;font-size:14px;font-weight:600}
-/* open-scan btn */
-.osb{display:flex;align-items:center;gap:12px;background:var(--p);color:#fff;border-radius:12px;padding:14px 18px;font-size:14px;font-weight:600;width:100%;box-shadow:0 4px 16px rgba(79,70,229,.3);margin-top:4px;border:none}
-.osb .ic{font-size:24px}
-/* ── MODAL ── */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;z-index:700;align-items:flex-end}
-.modal.on{display:flex}
-.modal.center{align-items:center;justify-content:center}
-.msh{background:var(--sur);border-radius:18px 18px 0 0;padding:20px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 -4px 24px rgba(0,0,0,.2)}
-.modal.center .msh{border-radius:var(--rl);max-width:420px;width:92%;animation:su .3s ease-out}
-@keyframes su{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-.mt{color:var(--p);font-weight:700;font-size:16px;margin-bottom:4px}
-.msub{color:var(--mu);font-size:13px;margin-bottom:14px}
-/* ── HIGHLIGHT ── */
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.hl{background:#fef08a!important;animation:pulse 1s 3}
-/* ── BUNDLE STYLES ── */
-.blbl{color:var(--mu);font-size:11px;letter-spacing:.5px;font-weight:600;text-transform:uppercase;margin-bottom:7px;margin-top:14px;display:block}
-.blbl.mt0{margin-top:0}
-.dgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
-.db{background:#f7f8fc;color:var(--mu);border:1px solid var(--bdr);border-radius:6px;padding:6px 2px;font-size:12px;font-weight:500;cursor:pointer}
-.db.on{background:var(--p);color:#fff;font-weight:700;border-color:var(--p)}
-.db:active{transform:scale(.93)}
-.crow{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:4px}
-.cb{background:#f7f8fc;color:var(--mu);border:1.5px solid var(--bdr);border-radius:8px;padding:8px 18px;font-size:16px;font-weight:700;cursor:pointer}
-.cb.on{background:var(--p);color:#fff;border-color:var(--p)}
-.cb:active{transform:scale(.93)}
-.sprev{background:#e8eeff;border:1.5px solid var(--p);border-radius:10px;padding:10px 14px;margin-top:12px;font-size:13px;color:var(--mu)}
-.sprev strong{color:var(--p);font-weight:700}
-.sdadd{background:#f7f8fc;border:1.5px dashed var(--bdr);color:var(--mu);border-radius:8px;padding:9px 14px;font-size:12px;margin-top:8px;cursor:pointer;display:inline-block}
-.clrbtn{background:none;border:1px solid rgba(239,68,68,.4);color:var(--dan);border-radius:4px;padding:2px 8px;font-size:10px;margin-left:8px;font-weight:600}
-.div{height:1px;background:var(--bdr);margin:14px 0}
-/* bundle grid */
-.bsec{margin-bottom:20px}
-.dbadge{background:var(--p);color:#fff;border-radius:7px;padding:3px 13px;font-weight:700;font-size:14px;display:inline-block;margin-right:8px}
-.dshdr{display:flex;align-items:center;margin-bottom:9px}
-.sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
-.sc{border-radius:11px;padding:11px 12px;text-align:left;width:100%;border:2px solid;cursor:pointer;transition:all .15s;box-shadow:var(--ss)}
-.sc:active{transform:scale(.97)}
-.sc-e{background:#fff;border-color:var(--bdr)}.sc-h{background:#fffbf0;border-color:#d9770680}.sc-f{background:#fff5f5;border-color:#e0303080}.sc-m{background:#fff0f0;border-color:var(--dan)}
-.sc.rm{border-color:var(--amb)!important}
-.sc-e .scol{color:var(--mu)}.sc-h .scol{color:var(--ambh)}.sc-f .scol,.sc-m .scol{color:var(--dan)}
-.scol{font-weight:800;font-size:22px;line-height:1}
-.ssub{color:var(--inf);font-size:10px;margin-top:2px;font-weight:600}
-.scnt{font-size:11px;margin-top:4px;color:var(--mu)}
-.smiss{color:var(--dan);font-size:10px;font-weight:700;margin-top:2px}
-.rmfb{display:block;width:100%;background:#d9770612;border:1px solid #d9770640;color:var(--ambh);border-radius:5px;padding:4px 7px;font-size:10px;margin-top:4px;text-align:left;font-weight:600;cursor:pointer}
-.bfc{background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:11px 13px;margin-bottom:9px;box-shadow:var(--ss)}
-.bfc.miss{border-color:var(--dan);background:#fff5f5}
-.bfch{display:flex;justify-content:space-between;align-items:center}
-.bfid{color:var(--p);font-weight:700;font-size:15px}
-.mbadge{color:var(--dan);font-size:11px;background:rgba(239,68,68,.1);padding:2px 8px;border-radius:5px;font-weight:700}
-.bloc{color:var(--mu);font-size:12px;margin-top:4px}
-.bact{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
-.smb{border-radius:6px;padding:5px 11px;font-size:11px;font-weight:600;cursor:pointer;border:none}
-.bgtbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-.rtog{background:#f7f8fc;color:var(--mu);border:1.5px solid var(--bdr);border-radius:7px;padding:6px 13px;font-size:12px;font-weight:600;cursor:pointer}
-.rtog.on{background:rgba(217,119,6,.1);color:var(--ambh);border-color:var(--amb)}
-.legend{display:flex;gap:10px;margin-bottom:12px;font-size:11px;color:var(--mu);flex-wrap:wrap}
-.ld{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:3px;vertical-align:middle}
-.bview{display:none}.bview.on{display:block}
-.bnav{display:flex;background:var(--sur);border-bottom:1px solid var(--bdr);padding:0 6px}
-.bnb{background:none;color:var(--mu);font-size:13px;padding:11px 12px;border-bottom:2px solid transparent;font-weight:500;cursor:pointer}
-.bnb.on{color:var(--p);border-bottom:2px solid var(--p);font-weight:700}
-.nloc{background:#e8eeff;border:1.5px solid var(--p);border-radius:8px;padding:9px 13px;font-size:13px;color:var(--mu);margin:12px 0}
-.nloc strong{color:var(--p)}
-.bempty{color:var(--mu);font-size:13px;text-align:center;margin-top:40px}
-.bswrap{position:relative}
-.bsico{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--mu);font-size:16px;pointer-events:none}
-.bswrap input{padding-left:36px}
-.nores{background:#fff;border:1.5px solid var(--dan);border-radius:10px;padding:18px;color:var(--dan);text-align:center}
-.etags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
-.etag{display:inline-block;border-radius:5px;padding:3px 9px;font-size:11px;font-weight:600;background:#f7f8fc;border:1px solid var(--bdr);color:var(--txt);margin:1px}
-.etag.miss{background:#fff5f5;border-color:rgba(239,68,68,.4);color:var(--dan)}
-/* mismatch warning box */
-.mm-warn{background:#fff7ed;border:1.5px solid #f59e0b;border-radius:10px;padding:12px 14px;font-size:13px;margin-bottom:12px}
-.mm-warn .mw-title{color:#92400e;font-weight:700;font-size:14px;margin-bottom:4px}
-.mm-warn .mw-body{color:#78350f}
-/* toast */
-#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);border-radius:10px;padding:10px 22px;font-size:13px;font-weight:700;z-index:900;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis;display:none;color:#fff;box-shadow:0 4px 20px rgba(0,0,0,.3)}
-/* backup sections */
-.bk-sec{border-color:#7c3aed!important;background:#faf5ff!important}
-.dz-sec{border-color:var(--dan)!important;background:#fef2f2!important}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>वैदिक ऋचा — Daily Vedic Hymn</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@300;400;500;600;700;800;900&family=Tiro+Devanagari+Hindi:ital@0;1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0d0705;
+            --card: rgba(35, 18, 8, 0.75);
+            --border: rgba(212, 160, 60, 0.2);
+            --accent: #d4a03c;
+            --accent-bright: #f0c040;
+            --text: #f0e0c8;
+            --muted: #8a7560;
+            --glow: rgba(212, 160, 60, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans Devanagari', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .font-shloka {
+            font-family: 'Tiro Devanagari Hindi', 'Noto Sans Devanagari', serif;
+        }
+
+        /* ===== बैकग्राउंड कैनवास ===== */
+        #bgCanvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .bg-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            background:
+                radial-gradient(ellipse at 30% 20%, rgba(180, 120, 30, 0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 80%, rgba(160, 80, 20, 0.06) 0%, transparent 50%),
+                linear-gradient(180deg, rgba(13,7,5,0.3) 0%, rgba(13,7,5,0.8) 100%);
+        }
+
+        .main-content {
+            position: relative;
+            z-index: 10;
+        }
+
+        /* ===== ग्लो इफेक्ट्स ===== */
+        .glow-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            animation: orbFloat 8s ease-in-out infinite;
+        }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.1); }
+        }
+
+        /* ===== ऋचा कार्ड ===== */
+        .richa-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .richa-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+
+        /* ===== संस्कृत ऋचा ===== */
+        .sanskrit-text {
+            font-size: 1.55rem;
+            line-height: 2.2;
+            letter-spacing: 0.04em;
+            color: var(--accent-bright);
+            text-shadow: 0 0 30px rgba(240, 192, 64, 0.2);
+            text-align: center;
+        }
+
+        /* ===== ऑडियो प्लेयर ===== */
+        .audio-player {
+            background: rgba(20, 10, 4, 0.8);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 20px;
+        }
+
+        .play-btn {
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), #b8860b);
+            border: none;
+            color: #1a0a00;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .play-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 25px rgba(212, 160, 60, 0.4);
+        }
+
+        .play-btn.playing {
+            animation: pulse-glow 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 10px rgba(212, 160, 60, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(212, 160, 60, 0.6); }
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 4px;
+            background: rgba(212, 160, 60, 0.15);
+            border-radius: 2px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-bright));
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        /* ===== व्याख्या कार्ड्स ===== */
+        .vyakhya-card {
+            background: rgba(25, 12, 5, 0.7);
+            border: 1px solid rgba(212, 160, 60, 0.12);
+            border-radius: 12px;
+            padding: 20px 22px;
+            transition: all 0.35s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .vyakhya-card::after {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 3px;
+            background: var(--guru-color, var(--accent));
+            border-radius: 0 2px 2px 0;
+        }
+
+        .vyakhya-card:hover {
+            border-color: rgba(212, 160, 60, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+
+        .guru-avatar {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        /* ===== नेविगेशन ===== */
+        .nav-btn {
+            padding: 10px 24px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: rgba(35, 18, 8, 0.6);
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Noto Sans Devanagari', sans-serif;
+            font-size: 0.9rem;
+        }
+
+        .nav-btn:hover {
+            background: rgba(212, 160, 60, 0.15);
+            border-color: var(--accent);
+            color: var(--accent-bright);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* ===== वेद चयन ===== */
+        .ved-tab {
+            padding: 8px 18px;
+            border-radius: 20px;
+            border: 1px solid rgba(212, 160, 60, 0.15);
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Noto Sans Devanagari', sans-serif;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        .ved-tab.active {
+            background: linear-gradient(135deg, rgba(212, 160, 60, 0.2), rgba(180, 120, 30, 0.15));
+            border-color: var(--accent);
+            color: var(--accent-bright);
+            box-shadow: 0 0 15px rgba(212, 160, 60, 0.15);
+        }
+
+        .ved-tab:hover:not(.active) {
+            border-color: rgba(212, 160, 60, 0.4);
+            color: var(--text);
+        }
+
+        /* ===== डाउनलोड बटन ===== */
+        .download-btn {
+            padding: 12px 28px;
+            border-radius: 10px;
+            border: 1px solid var(--accent);
+            background: linear-gradient(135deg, rgba(212, 160, 60, 0.15), rgba(180, 120, 30, 0.1));
+            color: var(--accent-bright);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Noto Sans Devanagari', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .download-btn:hover {
+            background: linear-gradient(135deg, rgba(212, 160, 60, 0.3), rgba(180, 120, 30, 0.2));
+            box-shadow: 0 0 25px rgba(212, 160, 60, 0.2);
+            transform: translateY(-1px);
+        }
+
+        /* ===== स्क्रॉल एनिमेशन ===== */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(25px);
+            transition: all 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ===== दीपक एनिमेशन ===== */
+        .diya-flame {
+            animation: flicker 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes flicker {
+            0% { transform: scaleY(1) scaleX(1); opacity: 0.9; }
+            25% { transform: scaleY(1.05) scaleX(0.95); opacity: 1; }
+            50% { transform: scaleY(0.95) scaleX(1.05); opacity: 0.85; }
+            75% { transform: scaleY(1.08) scaleX(0.98); opacity: 0.95; }
+            100% { transform: scaleY(1) scaleX(1.02); opacity: 0.9; }
+        }
+
+        /* ===== तरंग एनिमेशन (ऑडियो) ===== */
+        .wave-bar {
+            width: 3px;
+            background: var(--accent);
+            border-radius: 2px;
+            transition: height 0.15s ease;
+        }
+
+        .wave-bar.active {
+            animation: waveAnim 0.6s ease-in-out infinite alternate;
+        }
+
+        @keyframes waveAnim {
+            0% { height: 4px; }
+            100% { height: 20px; }
+        }
+
+        /* ===== टोस्ट ===== */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(35, 18, 8, 0.95);
+            border: 1px solid var(--accent);
+            color: var(--accent-bright);
+            padding: 14px 28px;
+            border-radius: 10px;
+            z-index: 9999;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            pointer-events: none;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ===== ओम पल्स ===== */
+        .om-pulse {
+            animation: omPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes omPulse {
+            0%, 100% { text-shadow: 0 0 20px rgba(212, 160, 60, 0.3); }
+            50% { text-shadow: 0 0 40px rgba(212, 160, 60, 0.6), 0 0 80px rgba(212, 160, 60, 0.2); }
+        }
+
+        /* ===== शेयर बटन ===== */
+        .share-btn {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: rgba(25, 12, 5, 0.6);
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .share-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent-bright);
+            background: rgba(212, 160, 60, 0.1);
+        }
+
+        /* ===== रिस्पॉन्सिव ===== */
+        @media (max-width: 768px) {
+            .sanskrit-text { font-size: 1.2rem; line-height: 2; }
+            .vyakhya-card { padding: 16px 18px; }
+        }
+
+        @media (max-width: 480px) {
+            .sanskrit-text { font-size: 1.05rem; line-height: 1.9; }
+        }
+
+        /* ===== स्क्रॉलबार ===== */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: rgba(212, 160, 60, 0.3); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(212, 160, 60, 0.5); }
+
+        /* ===== प्रिंट स्टाइल ===== */
+        @media print {
+            #bgCanvas, .bg-overlay, .audio-player, .nav-btn, .download-btn, .share-btn, .ved-tabs { display: none !important; }
+            body { background: #fff; color: #000; }
+            .richa-card, .vyakhya-card { background: #fff; border: 1px solid #ccc; }
+            .sanskrit-text { color: #8B4513; text-shadow: none; }
+        }
+
+        /* ===== रिड्यूस्ड मोशन ===== */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
 </head>
 <body>
-
-<!-- ══ APP HEADER ══ -->
-<div id="app-hdr">
-  <div id="app-hdr-title">⚖️ Court Manager + 📁 Bundle Tracker</div>
-  <div id="tab-bar">
-    <button class="tab-btn on" onclick="switchTab('cfm')">⚖️ Court Files</button>
-    <button class="tab-btn"   onclick="switchTab('bundle')">📁 Bundle</button>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════
-     TAB 1 — COURT FILE MANAGER
-══════════════════════════════════════ -->
-<div class="tab-c on" id="cfm-tab">
-<div class="cnt">
-  <div class="sec">
-    <h3>📅 Working Date &amp; Version</h3>
-    <input type="date" id="workDate">
-    <select id="versionSelect"></select>
-  </div>
-  <div class="dash">
-    <div class="card">📁 Total<br><span id="totalCount">0</span></div>
-    <div class="card">📤 Sent<br><span id="sentCount">0</span></div>
-    <div class="card">📥 Received<br><span id="receivedCount">0</span></div>
-    <div class="card">💾 Storage<br><span id="storageUsage" style="font-size:12px;color:var(--mu)">...</span></div>
-  </div>
-  <div class="sec">
-    <h3>📥 Excel Upload</h3>
-    <input type="file" id="excelFile" accept=".xlsx,.xls">
-    <button class="btn" onclick="uploadExcel()">📤 Upload Excel</button>
-  </div>
-  <div class="sec">
-    <h3>🔍 Search &amp; Filter</h3>
-    <input type="text" id="searchBox" placeholder="Case No, Party Name...">
-    <div class="ftabs">
-      <button class="ftab ft-all" id="tab-all" onclick="setFilter('all')">🗂️ All<br><span class="tc" id="tabAllCount">0</span></button>
-      <button class="ftab" id="tab-psent" onclick="setFilter('psent')">⏳ Pending Sent<br><span class="tc" id="tabPSentCount">0</span></button>
-      <button class="ftab" id="tab-precvd" onclick="setFilter('precvd')">🕐 Pending Recv.<br><span class="tc" id="tabPRecvdCount">0</span></button>
-    </div>
-  </div>
-  <div class="sec">
-    <h3>✍️ Manual Entry</h3>
-    <div class="dwrap">
-      <input type="text" id="manualCaseInput" placeholder="Case No likhein..." autocomplete="off"
-        oninput="onManualInput()" onkeydown="onManualKeyDown(event)">
-      <div id="caseDD"></div>
-    </div>
-    <div class="g2">
-      <button class="btn btn-a" onclick="manualAction('SENT')">📤 Mark SENT</button>
-      <button class="btn btn-s" onclick="manualAction('RECEIVED')">📥 Mark RECEIVED</button>
-    </div>
-    <div id="manualStatus" class="smsg"></div>
-  </div>
-  <div class="sec" style="padding:12px">
-    <button class="btn btn-s" onclick="downloadExcel()" style="margin-top:0">📊 Download Excel</button>
-  </div>
-  <div class="twrap"><table id="cfmTable"></table></div>
-  <div class="sec bk-sec">
-    <h3 style="color:#7c3aed">🗄️ Backup &amp; Restore</h3>
-    <div class="g2">
-      <button class="btn btn-pu" onclick="exportBackup()">⬇️ Export</button>
-      <button class="btn btn-opu" onclick="document.getElementById('restoreFile').click()">⬆️ Restore</button>
-    </div>
-    <input type="file" id="restoreFile" accept=".json" style="display:none" onchange="importBackup(event)">
-    <div id="backupStatus" class="smsg"></div>
-  </div>
-  <div class="sec dz-sec">
-    <h3 style="color:var(--dan)">⚠️ Danger Zone</h3>
-    <button class="btn btn-d" onclick="deleteOldData()">🧹 Delete Data &gt; 60 Days</button>
-  </div>
-</div>
-<!-- Floating scan buttons -->
-<div class="flt" id="cfmFlt">
-  <button class="btn btn-a" onclick="startCFMScan('SENT')">📤 Scan SENT</button>
-  <button class="btn btn-s" onclick="startCFMScan('RECEIVED')">📥 Scan RECEIVED</button>
-</div>
-</div>
-
-<!-- ══════════════════════════════════════
-     TAB 2 — BUNDLE TRACKER
-══════════════════════════════════════ -->
-<div class="tab-c" id="bundle-tab">
-<div class="bnav">
-  <button class="bnb on" data-bv="add"    onclick="swBV('add')">➕ Add</button>
-  <button class="bnb"    data-bv="search" onclick="swBV('search')">🔍 Find</button>
-  <button class="bnb"    data-bv="grid"   onclick="swBV('grid')">🗂 Grid</button>
-</div>
-<div class="cnt" style="padding-top:14px">
-
-  <!-- ADD VIEW -->
-  <div class="bview on" id="bview-add">
-    <div style="font-weight:700;font-size:15px;margin-bottom:14px">📥 Files Add Karo</div>
-    <span class="blbl mt0">Main Date (1–31)</span>
-    <div class="dgrid" id="b-mdg"></div>
-    <div style="display:flex;align-items:center;margin-top:12px">
-      <span class="blbl" style="margin:0">Sub-Date <span style="font-weight:400;text-transform:none">(optional)</span></span>
-      <button class="clrbtn" id="b-sdc" onclick="bClearSD()" style="display:none">✕ Clear</button>
-    </div>
-    <div id="b-sds"><button class="sdadd" onclick="bEnableSD()">+ Sub-Date add karo (overflow)</button></div>
-    <span class="blbl">Column</span>
-    <div id="b-cr-wrap"></div>
-    <div class="sprev">Slot → <strong id="b-sp-t">—</strong> <span id="b-sp-c" style="font-size:12px"></span></div>
-    <div class="div"></div>
-    <span class="blbl mt0">Manually type karo <span style="font-weight:400;text-transform:none;font-size:11px">(no validation)</span></span>
-    <input type="text" id="b-mi" placeholder="File number, Enter dabao..." onkeydown="bMKey(event)">
-    <div style="color:var(--mu);font-size:11px;margin-top:4px">↵ Enter — comma se multiple</div>
-    <button class="btn" onclick="bMAdd()" style="margin-top:10px">✓ Add Karo</button>
-    <div id="b-exbox" style="display:none;margin-top:14px">
-      <span class="blbl">Is slot mein pehle se:</span>
-      <div id="b-extags" class="etags"></div>
-    </div>
-  </div>
-
-  <!-- SEARCH VIEW -->
-  <div class="bview" id="bview-search">
-    <div style="font-weight:700;font-size:15px;margin-bottom:14px">🔍 File Dhundo</div>
-    <div class="bswrap"><span class="bsico">🔎</span>
-      <input type="text" id="b-si" placeholder="File number type karo..." oninput="bRenderSearch()">
-    </div>
-    <div style="margin-top:14px" id="b-sr"></div>
-  </div>
-
-  <!-- GRID: date list -->
-  <div class="bview" id="bview-grid">
-    <div class="bgtbar">
-      <div style="color:var(--mu);font-size:12px">Date tap → files dekho</div>
-      <button class="rtog" id="rbtn" onclick="toggleRM()">⇄ Rearrange</button>
-    </div>
-    <div class="legend">
-      <span><span class="ld" style="background:#d97706"></span>Half (25–39)</span>
-      <span><span class="ld" style="background:#e03030"></span>Full (40+)</span>
-      <span><span class="ld" style="background:#e03030;opacity:.6"></span>Missing</span>
-    </div>
-    <div id="bgc"></div>
-  </div>
-
-  <!-- GRID: date detail (columns of that date) -->
-  <div class="bview" id="bview-date">
-    <button class="btn btn-g btn-sm" style="margin-bottom:14px" onclick="swBV('grid')">← Dates</button>
-    <div style="color:var(--p);font-weight:700;font-size:22px;margin-bottom:2px" id="bdd-title"></div>
-    <div style="color:var(--mu);font-size:12px;margin-bottom:14px" id="bdd-sub"></div>
-    <div id="bdd-cols"></div>
-  </div>
-
-  <!-- SLOT DETAIL (col → files list) -->
-  <div class="bview" id="bview-slot">
-    <button class="btn btn-g btn-sm" style="margin-bottom:14px" id="bsd-back">← Wapas</button>
-    <div style="color:var(--p);font-weight:700;font-size:18px;margin-bottom:3px" id="bsd-t"></div>
-    <div style="color:var(--mu);font-size:12px;margin-bottom:14px" id="bsd-s"></div>
-    <div id="bsd-c"></div>
-  </div>
-
-</div>
-</div>
-
-<!-- Floating Bundle Scan button -->
-<div class="flt" id="bundleFlt" style="display:none">
-  <button class="btn" style="width:155px;background:#4f46e5;box-shadow:0 6px 18px rgba(0,0,0,.25);margin-top:0;font-size:13px;padding:12px 10px" onclick="startBundleScan()">📷 Bundle Scan</button>
-</div>
-<!-- ══ SHARED SCANNER OVERLAY ══ -->
-<div id="scan-ov">
-  <div id="scan-box">
-    <video id="scan-vid" playsinline muted></video>
-    <div class="cr"><div class="cr2"></div></div>
-    <div class="sline"></div>
-    <div id="qr-hl"></div>
-    <div id="scan-flash"></div>
-    <div id="scan-sb">📷 Camera shuru ho rahi hai...</div>
-  </div>
-  <div id="scan-card"></div>
-  <div id="scan-ctrl">
-    <div id="scan-ml">—</div>
-    <button id="cont-btn" onclick="toggleCont()">🔁 Continuous: OFF</button>
-    <button id="scan-close" onclick="closeScan()">✕ Band Karo</button>
-  </div>
-</div>
-
-<!-- ══ CFM: NEXT DATE MODAL ══ -->
-<div class="modal center" id="ndModal">
-  <div class="msh">
-    <div class="mt">📅 Next Hearing Date</div>
-    <div class="msub" id="nd-lbl"></div>
-    <input type="date" id="ndInput">
-    <button class="btn btn-s" onclick="saveNextDate()" style="margin-top:12px">✅ Save Date</button>
-    <button class="btn btn-g" onclick="closeNDModal()" style="margin-top:8px">❌ Skip</button>
-  </div>
-</div>
-
-<!-- ══ BUNDLE: MOVE MODAL ══ -->
-<div class="modal" id="bmModal">
-  <div class="msh">
-    <div class="mt">⇄ Move / Rearrange</div>
-    <div class="msub" id="bm-fid"></div>
-    <span class="blbl mt0" style="display:block">Naya Main Date</span>
-    <div class="dgrid" id="bm-mdg"></div>
-    <div style="display:flex;align-items:center;margin-top:10px">
-      <span class="blbl" style="margin:0">Sub-Date <span style="font-weight:400">(optional)</span></span>
-      <button class="clrbtn" id="bm-sdc" onclick="bmClearSD()" style="display:none">✕ Clear</button>
-    </div>
-    <div id="bm-sds"><button class="sdadd" onclick="bmEnableSD()">+ Sub-Date add karo</button></div>
-    <span class="blbl" style="display:block">Naya Column</span>
-    <div class="crow" id="bm-cr"></div>
-    <div class="nloc" style="margin-top:10px">New → <strong id="bm-prev">—</strong></div>
-    <div class="g2" style="margin-top:4px">
-      <button class="btn" onclick="doBundleMove()">✓ Move Karo</button>
-      <button class="btn btn-g" onclick="closeBMModal()">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ MISMATCH MODAL (scan date ≠ CFM next date) ══ -->
-<div class="modal center" id="mmModal">
-  <div class="msh">
-    <div class="mt">⚠️ Date Mismatch!</div>
-    <div class="mm-warn">
-      <div class="mw-title" id="mm-title">—</div>
-      <div class="mw-body" id="mm-body">—</div>
-    </div>
-    <div style="font-size:13px;color:var(--mu);margin-bottom:10px">
-      Agar ye overflow case hai (same date pe files zyada hain), to <strong>Sub-Date fill karo:</strong>
-    </div>
-    <span class="blbl mt0" style="display:block">Sub-Date (mandatory to proceed)</span>
-    <div class="dgrid" id="mm-sdg"></div>
-    <div class="nloc">Location → <strong id="mm-prev">—</strong></div>
-    <div class="g2" style="margin-top:4px">
-      <button class="btn" id="mm-confirm-btn" onclick="confirmMismatch()">✓ Sub-Date ke saath Add Karo</button>
-      <button class="btn btn-d" onclick="cancelMismatch()">❌ Cancel</button>
-    </div>
-  </div>
-</div>
-
-<div id="toast"></div>
-
-<div id="toast"></div>
-
-<script>
-// ════════════════════════════════════════
-// IndexedDB
-// ════════════════════════════════════════
-const DB_NAME='CourtFileManagerDB', DB_VER=2;
-const SV='versions', SM='metadata', SB='bundles';
-let db;
-function openDB(){
-  return new Promise((res,rej)=>{
-    if(db)return res(db);
-    const r=indexedDB.open(DB_NAME,DB_VER);
-    r.onupgradeneeded=e=>{
-      const d=e.target.result;
-      if(!d.objectStoreNames.contains(SV))  d.createObjectStore(SV,{keyPath:'workDate'});
-      if(!d.objectStoreNames.contains(SM))  d.createObjectStore(SM,{keyPath:'key'});
-      if(!d.objectStoreNames.contains(SB))  d.createObjectStore(SB,{keyPath:'id'});
-    };
-    r.onsuccess=e=>{db=e.target.result;res(db);};
-    r.onerror=e=>rej(e.target.errorCode);
-  });
-}
-function idbTx(store,mode,fn){
-  return new Promise((res,rej)=>{
-    const tx=db.transaction(store,mode),s=tx.objectStore(store),r=fn(s);
-    r.onsuccess=()=>res(r.result);r.onerror=e=>rej(e.target.error);
-  });
-}
-const idbGV  = d=>idbTx(SV,'readonly',s=>s.get(d)).then(r=>r?r.versions:[]);
-const idbSV  = (d,v)=>idbTx(SV,'readwrite',s=>s.put({workDate:d,versions:v}));
-const idbDV  = d=>idbTx(SV,'readwrite',s=>s.delete(d));
-const idbAVK = ()=>idbTx(SV,'readonly',s=>s.getAllKeys());
-const idbGM  = k=>idbTx(SM,'readonly',s=>s.get(k)).then(r=>r?r.value:null);
-const idbSM  = (k,v)=>idbTx(SM,'readwrite',s=>s.put({key:k,value:v}));
-const idbDM  = k=>idbTx(SM,'readwrite',s=>s.delete(k));
-const idbAMK = ()=>idbTx(SM,'readonly',s=>s.getAllKeys());
-const idbGB  = id=>idbTx(SB,'readonly',s=>s.get(id));
-const idbSBn = obj=>idbTx(SB,'readwrite',s=>s.put(obj));
-const idbDB  = id=>idbTx(SB,'readwrite',s=>s.delete(id));
-const idbAB  = ()=>idbTx(SB,'readonly',s=>s.getAll());
-
-// ════════════════════════════════════════
-// SHARED HELPERS
-// ════════════════════════════════════════
-const COLS=['A','B','C','D','E','F'];
-const DATES=Array.from({length:31},(_,i)=>i+1);
-function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-let toastT;
-function showToast(msg,type){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.style.background=type==='w'?'#d97706':type==='d'?'#e03030':'#18a558';
-  t.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',2800);
-}
-// ── Sound System (Web Audio API — works in WebView) ──
-let _audioCtx = null;
-function _getAudioCtx(){
-  if(!_audioCtx) _audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-  return _audioCtx;
-}
-
-// Play a tone: freq=Hz, dur=seconds, type=waveform
-function _beep(freq, dur, type, vol){
-  try{
-    const ctx = _getAudioCtx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = type||'sine';
-    osc.frequency.setValueAtTime(freq, ctx.currentTime);
-    gain.gain.setValueAtTime(vol||0.4, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+dur);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime+dur);
-  }catch(e){}
-}
-
-// Different sounds for different events
-function soundSent(){
-  // Two rising tones = success
-  _beep(600, 0.12, 'sine', 0.4);
-  setTimeout(()=>_beep(900, 0.18, 'sine', 0.4), 130);
-}
-function soundReceived(){
-  // Three tones = received
-  _beep(500, 0.10, 'sine', 0.35);
-  setTimeout(()=>_beep(700, 0.10, 'sine', 0.35), 110);
-  setTimeout(()=>_beep(900, 0.20, 'sine', 0.35), 220);
-}
-function soundError(){
-  // Low buzz = error
-  _beep(200, 0.30, 'square', 0.3);
-}
-function soundAlready(){
-  // Single mid tone = already done
-  _beep(440, 0.25, 'sine', 0.3);
-}
-function soundNextDate(){
-  // Pleasant chime = next date saved
-  _beep(800, 0.12, 'sine', 0.3);
-  setTimeout(()=>_beep(1000, 0.12, 'sine', 0.3), 130);
-  setTimeout(()=>_beep(1200, 0.25, 'sine', 0.3), 260);
-}
-
-// speak() = no-op (speechSynthesis not supported in Android WebView)
-function speak(msg){ /* WebView doesn't support speechSynthesis */ }
-
-// Unlock AudioContext on first touch
-document.addEventListener('touchstart', function(){
-  try{ _getAudioCtx().resume(); }catch(e){}
-},{once:true});
-document.addEventListener('click', function(){
-  try{ _getAudioCtx().resume(); }catch(e){}
-},{once:true});
-
-
-let activeTab='cfm';
-function switchTab(t){
-  activeTab=t;
-  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('on',['cfm','bundle'][i]===t));
-  document.getElementById('cfm-tab').classList.toggle('on',t==='cfm');
-  document.getElementById('bundle-tab').classList.toggle('on',t==='bundle');
-  document.getElementById('cfmFlt').style.display=t==='cfm'?'flex':'none';
-  document.getElementById('bundleFlt').style.display=t==='bundle'?'flex':'none';
-  if(t==='bundle'){bRenderGrid();bUpdateST();}
-}
-
-// ════════════════════════════════════════
-// CFM STATE
-// ════════════════════════════════════════
-const DK=["srno","caseno","partyname","section","ps","sent","received","receiveddate","nextdate","remark"];
-let cData=[], upV=1, aFilter='all', lastRcvCase=null, dropIdx=-1;
-let sDeb;
-const rTimers = {}; // per-case debounce timers
-function sId(id){return String(id||"").replace(/[^a-zA-Z0-9-_]/g,'_');}
-function gSrch(r){return DK.map(k=>r[k]||"").join(' ').toLowerCase();}
-function dKey(){return workDate.value+"_"+upV;}
-function fmtD(iso){if(!iso)return"";const p=iso.split("-");return p.length===3?p[2]+"-"+p[1]+"-"+p[0]:iso;}
-// Get CFM next date day number for a case
-function getCFMDay(caseNo){
-  const r=cData.find(x=>x.caseno===String(caseNo).toUpperCase()||x.caseno===String(caseNo));
-  if(!r||!r.nextdate)return null;
-  return parseInt(r.nextdate.split('-')[2]);
-}
-function getCFMRecord(caseNo){
-  return cData.find(x=>x.caseno===String(caseNo));
-}
-
-// ════════════════════════════════════════
-// CFM INIT
-// ════════════════════════════════════════
-window.onload=async()=>{
-  try{
-    await openDB();
-    workDate.value=new Date().toISOString().split("T")[0];
-    await loadVersions();await loadCurV();await loadLocal();
-    updateSU();bInit();
-  }catch(e){console.error("Init:",e);}
-};
-async function updateSU(){
-  try{
-    if(navigator.storage&&navigator.storage.estimate){
-      const e=await navigator.storage.estimate();
-      const u=(e.usage/1048576).toFixed(2),t=(e.quota/1048576).toFixed(0),p=((e.usage/e.quota)*100).toFixed(1);
-      storageUsage.innerText=u+"MB/"+t+"MB ("+p+"%)";
-    }else storageUsage.innerText="IndexedDB";
-  }catch(e){storageUsage.innerText="IndexedDB";}
-}
-async function loadVersions(){
-  versionSelect.innerHTML="";
-  const vs=await idbGV(workDate.value);
-  if(!vs||!vs.length){versionSelect.innerHTML='<option value="1">Upload 1</option>';return;}
-  vs.forEach(v=>{const o=document.createElement("option");o.value=v;o.text="Upload "+v;versionSelect.appendChild(o);});
-}
-async function saveCurV(){await idbSM('cv_'+workDate.value,upV);}
-async function loadCurV(){const v=await idbGM('cv_'+workDate.value);upV=parseInt(v)||1;versionSelect.value=upV;}
-async function saveLocal(){try{await idbSM(dKey(),cData);}catch(e){console.error(e);}}
-async function loadLocal(){
-  try{const s=await idbGM(dKey());if(s&&Array.isArray(s)){cData=s;cData.forEach(r=>r.searchableText=gSrch(r));}else cData=[];}
-  catch(e){cData=[];}
-  drawTable(getFiltered());updateDash();
-}
-workDate.addEventListener("change",async()=>{await loadVersions();await loadCurV();await loadLocal();});
-versionSelect.addEventListener("change",async()=>{upV=parseInt(versionSelect.value);await saveCurV();await loadLocal();});
-
-// ════════════════════════════════════════
-// CFM DASHBOARD
-// ════════════════════════════════════════
-function updateDash(){
-  const t=cData.length,sn=cData.filter(x=>x.sent==="Sent").length,rc=cData.filter(x=>x.received==="Received").length;
-  const ps=cData.filter(x=>x.sent!=="Sent").length,pr=cData.filter(x=>x.sent==="Sent"&&x.received!=="Received").length;
-  totalCount.innerText=t;sentCount.innerText=sn;receivedCount.innerText=rc;
-  document.getElementById("tabAllCount").innerText=t;
-  document.getElementById("tabPSentCount").innerText=ps;
-  document.getElementById("tabPRecvdCount").innerText=pr;
-}
-function setFilter(f){
-  aFilter=f;
-  const m={all:'ft-all',psent:'ft-ps',precvd:'ft-pr'};
-  ['all','psent','precvd'].forEach(k=>{
-    const el=document.getElementById("tab-"+k);
-    el.className="ftab"+(k===f?" "+m[k]:"");
-  });
-  searchBox.value="";drawTable(getFiltered());
-}
-function getFiltered(){
-  let d=cData;
-  if(aFilter==='psent') d=d.filter(r=>r.sent!=="Sent");
-  else if(aFilter==='precvd') d=d.filter(r=>r.sent==="Sent"&&r.received!=="Received");
-  const q=searchBox.value.trim().toLowerCase();
-  if(q) d=d.filter(r=>r.searchableText&&r.searchableText.includes(q));
-  return d;
-}
-
-// ════════════════════════════════════════
-// CFM EXCEL UPLOAD
-// ════════════════════════════════════════
-async function uploadExcel(){
-  const file=excelFile.files[0];if(!file){alert("Excel file select karo");return;}
-  try{
-    const vs=await idbGV(workDate.value);upV=(vs&&vs.length?vs.length:0)+1;
-    const reader=new FileReader();
-    reader.onload=async e=>{
-      try{
-        const wb=XLSX.read(e.target.result,{type:"binary"});
-        const sheet=wb.Sheets[wb.SheetNames[0]];
-        let rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:""});
-        if(rows.length>0)rows.shift();
-        cData=rows.map(r=>{
-          const rec={srno:r[0]||"",caseno:String(r[1]||"").trim(),partyname:r[2]||"",section:r[3]||"",ps:r[4]||"",sent:"",received:"",receiveddate:"",nextdate:"",remark:""};
-          rec.searchableText=gSrch(rec);return rec;
-        }).filter(r=>r.caseno!=="");
-        const opt=document.createElement("option");opt.value=upV;opt.text="Upload "+upV;versionSelect.appendChild(opt);versionSelect.value=upV;
-        const nv=vs?[...vs,upV]:[upV];
-        await idbSV(workDate.value,nv);await saveCurV();await saveLocal();
-        drawTable(getFiltered());updateDash();updateSU();
-        soundReceived();alert("Upload ho gaya! ("+cData.length+" records)");excelFile.value="";
-      }catch(err){alert("Excel error: "+err.message);}
-    };
-    reader.readAsBinaryString(file);
-  }catch(err){alert("Upload fail: "+err);}
-}
-
-// ════════════════════════════════════════
-// CFM TABLE
-// ════════════════════════════════════════
-function drawTable(data){
-  const tbl=document.getElementById("cfmTable");
-  if(!data||!data.length){tbl.innerHTML="";return;}
-  const H=["srno","caseno","partyname","section","ps","sent","received","receiveddate","nextdate","remark"];
-  const L=["Sr.No","Case No","Party Name","Section","PS","Sent","Received","Recv.Date","Next Date","Remark"];
-  let h="<tr>"+L.map(x=>"<th>"+x+"</th>").join("")+"</tr>";
-  data.forEach(r=>{
-    let row='<tr id="row_'+sId(r.caseno)+'">';
-    H.forEach(k=>{
-      if(k==="remark"){
-        const ca=String(r.caseno).replace(/"/g,'&quot;'),cj=String(r.caseno).replace(/\\/g,'\\\\').replace(/'/g,"\\'"),va=String(r[k]||"").replace(/"/g,'&quot;');
-        row+='<td><input data-caseno="'+ca+'" value="'+va+'" oninput="updateRemark(\''+cj+'\',this.value)" placeholder="Remark..."></td>';
-      } else if(k==="receiveddate"||k==="nextdate"){
-        row+='<td>'+fmtD(r[k])+'</td>';
-      } else if(k==="sent"&&r.sent==="Sent"){
-        row+='<td style="background:#fff3cd">'+esc(r[k]||"")+'</td>';
-      } else if(k==="received"&&r.received==="Received"){
-        row+='<td style="background:#c8e6c9">'+esc(r[k]||"")+'</td>';
-      } else {
-        row+='<td>'+esc(r[k]||"")+'</td>';
-      }
-    });
-    row+="</tr>";h+=row;
-  });
-  tbl.innerHTML=h;
-  setTimeout(()=>{
-    const ac=document.activeElement,acc=ac&&ac.dataset&&ac.dataset.caseno?ac.dataset.caseno:null,cp=acc?ac.selectionStart:null;
-    const rm=new Map(cData.map(r=>[r.caseno,r.remark||""]));
-    document.querySelectorAll('input[data-caseno]').forEach(inp=>{
-      const val=rm.get(inp.dataset.caseno);if(val===undefined)return;
-      if(acc&&inp.dataset.caseno===acc){if(inp.value!==val)inp.value=val;if(cp!=null)try{inp.setSelectionRange(cp,cp);}catch(e){}inp.focus();}
-      else inp.value=val;
-    });
-  },0);
-}
-searchBox.addEventListener("input",()=>{clearTimeout(sDeb);sDeb=setTimeout(()=>drawTable(getFiltered()),150);});
-async function updateRemark(cn,val){
-  clearTimeout(rTimers[cn]);
-  rTimers[cn]=setTimeout(async()=>{
-    const i=cData.findIndex(r=>r.caseno===cn);
-    if(i!==-1){cData[i].remark=val;cData[i].searchableText=gSrch(cData[i]);await saveLocal();}
-    delete rTimers[cn];
-  },400);
-}
-
-// ════════════════════════════════════════
-// CFM MANUAL ENTRY
-// ════════════════════════════════════════
-function showMS(msg,type){
-  const el=document.getElementById("manualStatus");
-  el.textContent=msg;el.className="smsg s-"+type;
-  clearTimeout(el._t);if(type==="ok")el._t=setTimeout(()=>el.className="smsg",3000);
-}
-function onManualInput(){
-  const v=manualCaseInput.value.trim().toLowerCase();dropIdx=-1;
-  if(!v||!cData.length){closeDD();return;}
-  const m=cData.filter(r=>String(r.caseno).toLowerCase().includes(v)||String(r.partyname).toLowerCase().includes(v)).slice(0,20);
-  if(!m.length){closeDD();return;}
-  const dd=document.getElementById("caseDD");
-  dd.innerHTML=m.map(r=>{
-    const cn=String(r.caseno).replace(/"/g,'&quot;'),cj=String(r.caseno).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return`<div class="di" data-caseno="${cn}" onmousedown="selDD('${cj}')"><div class="di-cn">${esc(r.caseno)}</div><div class="di-pt">${esc(r.partyname||"")}${r.section?" | "+esc(r.section):""}</div></div>`;
-  }).join("");
-  dd.style.display="block";
-}
-function onManualKeyDown(e){
-  const dd=document.getElementById("caseDD"),items=dd.querySelectorAll(".di");if(!items.length)return;
-  if(e.key==="ArrowDown"){e.preventDefault();dropIdx=Math.min(dropIdx+1,items.length-1);updDDHL(items);}
-  else if(e.key==="ArrowUp"){e.preventDefault();dropIdx=Math.max(dropIdx-1,0);updDDHL(items);}
-  else if(e.key==="Enter"){e.preventDefault();if(dropIdx>=0&&items[dropIdx])selDD(items[dropIdx].dataset.caseno);}
-  else if(e.key==="Escape")closeDD();
-}
-function updDDHL(items){items.forEach((el,i)=>{el.classList.toggle("act",i===dropIdx);if(i===dropIdx)el.scrollIntoView({block:"nearest"});});}
-function selDD(cn){manualCaseInput.value=cn;closeDD();document.getElementById("manualStatus").className="smsg";}
-function closeDD(){document.getElementById("caseDD").style.display="none";dropIdx=-1;}
-document.addEventListener("click",e=>{if(!e.target.closest(".dwrap"))closeDD();});
-
-async function manualAction(mode){
-  const cn=manualCaseInput.value.trim();
-  if(!cn){showMS("⚠️ Case No enter karo","err");return;}
-  if(!cData.length){showMS("⚠️ Data nahi. Excel upload karo","err");return;}
-  const idx=cData.findIndex(r=>String(r.caseno).trim()===cn);
-  if(idx===-1){showMS("❌ Not Found: "+cn,"err");soundError();return;}
-  const rec=cData[idx];
-  if(mode==="SENT"){
-    if(rec.sent==="Sent"){showMS("ℹ️ Already SENT: "+cn,"info");soundAlready();return;}
-    cData[idx].sent="Sent";cData[idx].searchableText=gSrch(cData[idx]);
-    showMS("✅ SENT: "+cn,"ok");soundSent();manualCaseInput.value="";
-    // Hide bundle entry
-    await hideBundleEntry(cn);
-  } else {
-    if(rec.sent!=="Sent"){showMS("❌ Pehle SENT karo","err");soundError();return;}
-    if(rec.received==="Received"){showMS("ℹ️ Already RECEIVED: "+cn,"info");soundAlready();return;}
-    cData[idx].received="Received";
-    cData[idx].receiveddate=new Date().toISOString().split("T")[0];
-    lastRcvCase=cn;cData[idx].searchableText=gSrch(cData[idx]);
-    showMS("✅ RECEIVED: "+cn,"ok");soundReceived();manualCaseInput.value="";
-    openNDModal(cn);
-  }
-  drawTable(getFiltered());scrollToFile(cn);updateDash();await saveLocal();
-}
-
-// ════════════════════════════════════════
-// CFM SCROLL HIGHLIGHT
-// ════════════════════════════════════════
-function scrollToFile(cn){
-  const row=document.getElementById("row_"+sId(cn));
-  if(!row)return;
-  row.scrollIntoView({behavior:"smooth",block:"center"});
-  row.classList.add("hl");setTimeout(()=>row.classList.remove("hl"),4000);
-}
-
-// ════════════════════════════════════════
-// CFM NEXT DATE MODAL
-// ════════════════════════════════════════
-function openNDModal(cn){
-  const rec=cData.find(r=>r.caseno===cn);
-  document.getElementById("nd-lbl").textContent=(rec?rec.partyname+" — ":"")+cn;
-  document.getElementById("ndInput").value="";
-  document.getElementById("ndModal").classList.add("on");
-}
-function closeNDModal(){document.getElementById("ndModal").classList.remove("on");lastRcvCase=null;}
-document.getElementById("ndModal").addEventListener("click",function(e){if(e.target===this)closeNDModal();});
-
-async function saveNextDate(){
-  if(!lastRcvCase)return;
-  const d=document.getElementById("ndInput").value;
-  if(!d){alert("Date select karo");return;}
-  const idx=cData.findIndex(r=>r.caseno===lastRcvCase);
-  if(idx!==-1){cData[idx].nextdate=d;cData[idx].searchableText=gSrch(cData[idx]);}
-  document.getElementById("ndModal").classList.remove("on");
-  const dt=new Date(d);
-  soundNextDate();
-  drawTable(getFiltered());await saveLocal();
-  lastRcvCase=null;
-}
-
-// ════════════════════════════════════════
-// CFM DOWNLOAD
-// ════════════════════════════════════════
-function downloadExcel(){
-  if(!cData.length){alert("Data nahi hai");return;}
-  // Show format choice
-  showDLModal();
-}
-
-function showDLModal(){
-  document.getElementById('dl-modal').classList.add('on');
-}
-function closeDLModal(){
-  document.getElementById('dl-modal').classList.remove('on');
-}
-
-function doDownload(fmt){
-  closeDLModal();
-  const ed=cData.map(r=>({
-    "Sr.No":String(r.srno||""),"Case No":String(r.caseno||""),
-    "Party Name":String(r.partyname||""),"Section":String(r.section||""),
-    "PS":String(r.ps||""),"Sent":String(r.sent||""),
-    "Received":String(r.received||""),"Recv.Date":String(r.receiveddate||""),
-    "Next Date":String(r.nextdate||""),"Remark":String(r.remark||"")
-  }));
-  const fname="Court_"+workDate.value+"_v"+upV;
-
-  if(fmt==="csv"){
-    const keys=["Sr.No","Case No","Party Name","Section","PS","Sent","Received","Recv.Date","Next Date","Remark"];
-    const qf=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
-    const rows=[keys.map(qf).join(",")].concat(ed.map(r=>keys.map(k=>qf(r[k])).join(",")));
-    const csvStr=rows.join("\r\n");
-    // TextEncoder — proper UTF-8, Hindi will not garble
-    const enc=new TextEncoder();
-    const bom=new Uint8Array([0xEF,0xBB,0xBF]);
-    const encoded=enc.encode(csvStr);
-    const merged=new Uint8Array(bom.length+encoded.length);
-    merged.set(bom,0); merged.set(encoded,bom.length);
-    const blob=new Blob([merged],{type:"text/csv"});
-    openBlob(blob,fname+".csv");
-    return;
-  }
-
-  // XLSX
-  const ws=XLSX.utils.json_to_sheet(ed),wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,"Court Data");
-  const b64=XLSX.write(wb,{bookType:"xlsx",type:"base64"});
-  const bin=atob(b64),bytes=new Uint8Array(bin.length);
-  for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
-  const blob=new Blob([bytes],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
-  openBlob(blob,fname+".xlsx");
-}
-
-function dlBlob(blob,fname){ openBlob(blob,fname); }
-
-// Read blob as text and copy/show
-function openBlob(blob,fname){
-  const reader=new FileReader();
-  reader.onload=function(e){
-    const dataStr=e.target.result; // base64 data URI or text
-
-    // For JSON and CSV — read as text and show copy panel
-    if(fname.endsWith('.json')||fname.endsWith('.csv')){
-      const textReader=new FileReader();
-      textReader.onload=function(te){
-        showCopyPanel(te.target.result, fname);
-      };
-      textReader.readAsText(blob,'utf-8');
-      return;
-    }
-    // For xlsx — try URL.createObjectURL
-    try{
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');
-      a.href=url; a.download=fname; a.style.display='none';
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(()=>URL.revokeObjectURL(url),10000);
-      showToast('✅ Excel download ho gaya!');
-    }catch(e){ showToast('❌ '+e.message,'d'); }
-  };
-  reader.readAsDataURL(blob);
-}
-
-// Show data in full screen panel with copy button
-function showCopyPanel(text, fname){
-  // Remove existing panel
-  const old=document.getElementById('copy-panel');
-  if(old) old.remove();
-
-  const panel=document.createElement('div');
-  panel.id='copy-panel';
-  panel.style.cssText='position:fixed;inset:0;z-index:9999;background:#fff;display:flex;flex-direction:column;padding:0';
-
-  panel.innerHTML=`
-    <div style="background:#4f46e5;color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-      <div>
-        <div style="font-weight:700;font-size:15px">📋 ${fname}</div>
-        <div style="font-size:11px;opacity:.8">Copy karke WhatsApp/Gmail mein save karo</div>
-      </div>
-      <button onclick="document.getElementById('copy-panel').remove()" style="background:#ffffff30;border:none;color:#fff;border-radius:6px;padding:6px 12px;font-size:13px;font-weight:600">✕ Close</button>
-    </div>
-    <div style="padding:10px;display:flex;gap:8px;flex-shrink:0;border-bottom:1px solid #e2e8f0">
-      <button id="copy-btn" onclick="doCopy()" style="flex:1;background:#10b981;border:none;color:#fff;border-radius:8px;padding:11px;font-size:14px;font-weight:700">📋 Copy All</button>
-      <button onclick="document.getElementById('copy-panel').remove()" style="background:#94a3b8;border:none;color:#fff;border-radius:8px;padding:11px 14px;font-size:13px;font-weight:600">Cancel</button>
-    </div>
-    <textarea id="copy-area" readonly style="flex:1;width:100%;border:none;outline:none;padding:12px;font-size:11px;font-family:monospace;resize:none;color:#1e293b;background:#f8fafc">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
-    <div style="padding:10px;background:#fef9c3;font-size:12px;color:#92400e;flex-shrink:0">
-      💡 Copy ke baad: WhatsApp → New Message → Paste → .txt file attach hogi. Ya Gmail mein paste karke email karo khud ko.
-    </div>`;
-
-  document.body.appendChild(panel);
-
-  // Store text for copy
-  panel._text=text;
-}
-
-function doCopy(){
-  const panel=document.getElementById('copy-panel');
-  const text=panel._text;
-  const btn=document.getElementById('copy-btn');
-  if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(text).then(()=>{
-      btn.textContent='✅ Copied!';btn.style.background='#059669';
-      showToast('✅ Copy ho gaya! Ab paste karo.');
-    }).catch(()=>fallbackCopy(text,btn));
-  } else {
-    fallbackCopy(text,btn);
-  }
-}
-
-function fallbackCopy(text,btn){
-  const ta=document.getElementById('copy-area');
-  ta.select();
-  try{
-    document.execCommand('copy');
-    btn.textContent='✅ Copied!';btn.style.background='#059669';
-    showToast('✅ Copy ho gaya! Ab paste karo.');
-  }catch(e){
-    showToast('⚠ Manual select karo aur copy karo','w');
-  }
-}
-
-
-// ════════════════════════════════════════
-// CFM DELETE OLD / BACKUP
-// ════════════════════════════════════════
-async function deleteOldData(){
-  if(!confirm("60 din se purana data delete karein?"))return;
-  const today=new Date();let count=0;
-  try{
-    const mk=await idbAMK();
-    for(const key of mk){if(key.startsWith('cv_'))continue;const fd=new Date(key.substring(0,10));if(!isNaN(fd)&&(today-fd)/86400000>60){await idbDM(key);count++;}}
-    const dk=await idbAVK();for(const d of dk){const fd=new Date(d);if(!isNaN(fd)&&(today-fd)/86400000>60)await idbDV(d);}
-    alert(count+" records delete ho gaye.");updateSU();
-  }catch(err){alert("Delete fail: "+err);}
-}
-async function exportBackup(){
-  const stEl=document.getElementById("backupStatus");
-  try{
-    const avk=await idbAVK(),vd={};
-    for(const d of avk){const r=await idbTx(SV,'readonly',s=>s.get(d));if(r)vd[d]=r.versions;}
-    const amk=await idbAMK(),md={};
-    for(const k of amk){const v=await idbGM(k);if(v!==null)md[k]=v;}
-    const allB=await idbAB();
-    const bk={exportedAt:new Date().toISOString(),appVersion:"3.0",versionsStore:vd,metadataStore:md,bundlesStore:allB};
-    const enc=new TextEncoder();
-    const blob=new Blob([enc.encode(JSON.stringify(bk,null,2))],{type:"application/json"});
-    const fname="CourtBundleBackup_"+new Date().toISOString().split("T")[0]+".json";
-    openBlob(blob,fname);
-    stEl.textContent="✅ Browser mein khul raha hai — Save karo";
-    stEl.className="smsg s-ok";
-    clearTimeout(stEl._t);stEl._t=setTimeout(()=>stEl.className="smsg",3000);
-  }catch(err){
-    stEl.textContent="❌ Export fail: "+err;
-    stEl.className="smsg s-err";
-  }
-}
-
-async function importBackup(event){
-  const stEl=document.getElementById("backupStatus"),file=event.target.files[0];event.target.value="";
-  if(!file)return;
-  if(!confirm("⚠️ Restore karne se SAARA data replace hoga. Sure?"))return;
-  const reader=new FileReader();
-  reader.onload=async e=>{
-    try{
-      const bk=JSON.parse(e.target.result);
-      if(!bk.versionsStore||!bk.metadataStore){stEl.textContent="❌ Invalid backup";stEl.className="smsg s-err";return;}
-      for(const[k,v] of Object.entries(bk.versionsStore))await idbTx(SV,'readwrite',s=>s.put({workDate:k,versions:v}));
-      for(const[k,v] of Object.entries(bk.metadataStore))await idbSM(k,v);
-      if(bk.bundlesStore)for(const b of bk.bundlesStore)await idbSBn(b);
-      stEl.textContent="✅ Restore ho gaya!";stEl.className="smsg s-ok";setTimeout(()=>location.reload(),1500);
-    }catch(err){stEl.textContent="❌ Restore fail: "+err.message;stEl.className="smsg s-err";}
-  };
-  reader.readAsText(file);
-}
-
-// ════════════════════════════════════════
-// SHARED SCANNER (BarcodeDetector)
-// ════════════════════════════════════════
-let scanStream=null,scanActive=false,scanCtx='',scanDetector=null,scanCool=false,scanLast='',contMode=false;
-function initDet(){
-  if(scanDetector)return true;
-  if(!('BarcodeDetector' in window))return false;
-  try{scanDetector=new BarcodeDetector({formats:['qr_code']});return true;}catch(e){return false;}
-}
-function setSS(msg){document.getElementById('scan-sb').textContent=msg;}
-function showSC(msg,bg){
-  const c=document.getElementById('scan-card');c.textContent=msg;c.style.background=bg;c.style.display='block';
-  setTimeout(()=>c.style.display='none',2200);
-}
-function openScan(ctx,lbl,allowCont){
-  if(!initDet()){showToast('BarcodeDetector support nahi hai. Chrome update karo','d');return;}
-  scanCtx=ctx;scanActive=true;scanCool=false;scanLast='';
-  document.getElementById('cont-btn').style.display=allowCont?'block':'none';
-  if(allowCont){document.getElementById('cont-btn').textContent='🔁 Continuous: '+(contMode?'ON':'OFF');document.getElementById('cont-btn').className=contMode?'on':'';}
-  document.getElementById('scan-ml').textContent=lbl;
-  document.getElementById('scan-card').style.display='none';
-  document.getElementById('scan-ov').classList.add('on');
-  setSS('📷 Camera shuru ho rahi hai...');
-  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}})
-  .then(stream=>{
-    scanStream=stream;const vid=document.getElementById('scan-vid');vid.srcObject=stream;
-    vid.onloadedmetadata=()=>{vid.play();setSS('📷 QR code frame ke saamne laao');schedDet();};
-    if(vid.readyState>=2){vid.play();setSS('📷 QR code frame ke saamne laao');schedDet();}
-  }).catch(err=>setSS('❌ Camera: '+err.message));
-}
-function schedDet(){if(!scanActive)return;setTimeout(doDet,80);}
-async function doDet(){
-  if(!scanActive)return;
-  const vid=document.getElementById('scan-vid');
-  if(!vid||vid.readyState<2||vid.paused||vid.videoWidth===0){schedDet();return;}
-  try{
-    const bs=await scanDetector.detect(vid);
-    if(bs&&bs.length&&!scanCool){
-      const dec=bs[0].rawValue.trim();
-      if(dec&&(!contMode||dec!==scanLast)){
-        scanLast=dec;scanCool=true;
-        showQRBox(bs[0].boundingBox,vid);
-        const fl=document.getElementById('scan-flash');fl.classList.remove('go');void fl.offsetWidth;fl.classList.add('go');
-        handleScanResult(dec);
-        if(!contMode){setTimeout(closeScan,700);return;}
-        else{setTimeout(()=>{scanCool=false;hideQRBox();},2200);schedDet();return;}
-      }
-    }
-  }catch(e){}
-  schedDet();
-}
-function showQRBox(rect,vid){
-  const b=document.getElementById('qr-hl'),w=document.getElementById('scan-box');
-  const sx=w.offsetWidth/vid.videoWidth,sy=w.offsetHeight/vid.videoHeight;
-  b.style.left=Math.round(rect.x*sx)+'px';b.style.top=Math.round(rect.y*sy)+'px';
-  b.style.width=Math.round(rect.width*sx)+'px';b.style.height=Math.round(rect.height*sy)+'px';b.style.display='block';
-}
-function hideQRBox(){document.getElementById('qr-hl').style.display='none';}
-function closeScan(){
-  scanActive=false;
-  if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null;}
-  document.getElementById('scan-vid').srcObject=null;hideQRBox();
-  document.getElementById('scan-ov').classList.remove('on');
-}
-function toggleCont(){
-  contMode=!contMode;scanLast='';scanCool=false;
-  const b=document.getElementById('cont-btn');b.textContent='🔁 Continuous: '+(contMode?'ON':'OFF');b.className=contMode?'on':'';
-}
-function handleScanResult(dec){
-  if(scanCtx==='cfm_sent')      handleCFMScan(dec,'SENT');
-  else if(scanCtx==='cfm_rcv')  handleCFMScan(dec,'RECEIVED');
-  else if(scanCtx==='bundle')   handleBundleScan(dec);
-}
-
-// ════════════════════════════════════════
-// CFM SCANNER
-// ════════════════════════════════════════
-function startCFMScan(mode){
-  openScan(mode==='SENT'?'cfm_sent':'cfm_rcv',
-    mode==='SENT'?'📤 Scanning for SENT...':'📥 Scanning for RECEIVED...',false);
-}
-async function handleCFMScan(code,mode){
-  const idx=cData.findIndex(r=>r.caseno===code);
-  if(idx===-1){showSC('❌ Not Found: '+code,'#e03030');soundError();return;}
-  if(mode==='SENT'){
-    if(cData[idx].sent==="Sent"){showSC('ℹ️ Already Sent: '+code,'#d97706');soundAlready();return;}
-    cData[idx].sent="Sent";cData[idx].searchableText=gSrch(cData[idx]);
-    showSC('✅ SENT: '+code,'#18a558');soundSent();
-    await hideBundleEntry(code); // ← AUTO HIDE FROM BUNDLE
-  } else {
-    if(cData[idx].sent!=="Sent"){showSC('❌ Pehle SENT karo: '+code,'#e03030');soundError();return;}
-    if(cData[idx].received==="Received"){showSC('ℹ️ Already Received: '+code,'#d97706');soundAlready();return;}
-    cData[idx].received="Received";cData[idx].receiveddate=new Date().toISOString().split("T")[0];
-    cData[idx].searchableText=gSrch(cData[idx]);lastRcvCase=code;
-    showSC('✅ RECEIVED: '+code,'#18a558');soundReceived();
-    setTimeout(()=>{closeScan();openNDModal(code);},800);
-    drawTable(getFiltered());scrollToFile(code);updateDash();await saveLocal();
-    return;
-  }
-  drawTable(getFiltered());scrollToFile(code);updateDash();await saveLocal();
-}
-
-// ════════════════════════════════════════
-// BUNDLE: AUTO-HIDE when SENT
-// ════════════════════════════════════════
-async function hideBundleEntry(caseNo){
-  const id=String(caseNo).toUpperCase();
-  if(bFiles[id]){
-    bFiles[id].hidden=true;
-    await idbSBn(bFiles[id]);
-    if(activeTab==='bundle')bRenderGrid();
-    showToast('📁 '+id+' bundle se hide ho gaya (SENT)');
-  }
-}
-// Bundle state below
-
-// ════════════════════════════════════════
-// BUNDLE STATE + COLUMN SYSTEM
-// ════════════════════════════════════════
-// Use COLS and DATES already declared above
-const COLS_NORMAL = COLS; // COLS = ['A','B','C','D','E','F'] from CFM section
-
-function getColsForDate(md) {
-  if(SPECIAL_DATES.includes(md)) {
-    return [
-      ...SHELF_LETTERS.map(l=>'S1'+l),
-      ...SHELF_LETTERS.map(l=>'S2'+l)
-    ];
-  }
-  return COLS_NORMAL;
-}
-function dispCol(col) {
-  // S1A → S1-A, S2O → S2-O, A → A
-  if(col && col.length === 3 && (col.startsWith('S1') || col.startsWith('S2'))) {
-    return col.slice(0,2)+'-'+col.slice(2);
-  }
-  return col;
-}
-
-// DATES already declared above (Array 1-31)
-const SHELF_LETTERS = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O'];
-const SPECIAL_DATES = [29,30,31];
-let bFiles={}, bRM=false, bMoveId=null, bSlot=null, bActiveDate=null;
-let bAMD=1, bASD=null, bAC='A';
-let bMMD=1, bMSD=null, bMC='A';
-let mmPending={id:'',cfmDay:0}, mmSD=1;
-
-async function bInit(){
-  const all=await idbAB(); bFiles={};
-  all.forEach(b=>bFiles[b.id]=b);
-  bBDG('b-mdg', bAMD, d=>{ bAMD=d; bRenderColButtons(); bRenderAdd(); });
-  function rebuildMoveMDG(){ bBDG('bm-mdg',bMMD, d=>{ bMMD=d; bUpdateMP(); bBuildMoveCR(); rebuildMoveMDG(); }); }
-  rebuildMoveMDG();
-  bBuildMoveCR();
-  bRenderColButtons();
-  bUpdateSP(); bUpdateMP(); bUpdateST();
-}
-
-function swBV(v){
-  document.querySelectorAll('.bnb').forEach(b=>b.classList.toggle('on',b.dataset.bv===v));
-  document.querySelectorAll('.bview').forEach(el=>el.classList.remove('on'));
-  const id = v==='date'?'bview-date': v==='slot'?'bview-slot':'bview-'+v;
-  document.getElementById(id).classList.add('on');
-  if(v==='grid') bRenderGrid();
-  if(v==='search') setTimeout(()=>document.getElementById('b-si').focus(),80);
-}
-
-function bBDG(id,sel,cb){
-  const el=document.getElementById(id); if(!el)return;
-  el.innerHTML=DATES.map(d=>`<button class="db${sel===d?' on':''}" onclick="(${cb})(${d})">${d}</button>`).join('');
-}
-
-// ── Column buttons (changes based on selected date) ──
-function bRenderColButtons() {
-  const wrap = document.getElementById('b-cr-wrap');
-  const cols = getColsForDate(bAMD);
-  const isSpecial = SPECIAL_DATES.includes(bAMD);
-
-  if(!isSpecial) {
-    // Simple row
-    wrap.innerHTML = `<div class="crow" id="b-cr">`+
-      cols.map(c=>`<button class="cb${bAC===c?' on':''}" onclick="bSetCol('${c}')">${c}</button>`).join('')+
-      `</div>`;
-  } else {
-    // Two safes, 5 shelves each, 3 cols per shelf
-    let h = '';
-    ['S1','S2'].forEach(safe=>{
-      h += `<div style="margin-bottom:10px">
-        <div style="color:var(--mu);font-size:11px;font-weight:600;letter-spacing:.5px;margin-bottom:6px;text-transform:uppercase">
-          🗄 Safe ${safe.slice(1)}
-        </div>`;
-      for(let shelf=0;shelf<5;shelf++){
-        h += `<div class="crow" style="margin-bottom:5px">`;
-        for(let ci=0;ci<3;ci++){
-          const letter = SHELF_LETTERS[shelf*3+ci];
-          const col = safe+letter;
-          h += `<button class="cb${bAC===col?' on':''}" onclick="bSetCol('${col}')" style="min-width:52px">${safe.slice(1)}-${letter}</button>`;
-        }
-        h += `</div>`;
-      }
-      h += `</div>`;
-    });
-    wrap.innerHTML = h;
-  }
-  // If current bAC not valid for new date, reset
-  if(!getColsForDate(bAMD).includes(bAC)){
-    bAC = getColsForDate(bAMD)[0];
-    bRenderColButtons();
-  }
-}
-
-function bSetCol(c){ bAC=c; bRenderColButtons(); bUpdateSP(); bUpdateST(); }
-
-function bBuildMoveCR(){
-  const cols = getColsForDate(bMMD);
-  const isSpecial = SPECIAL_DATES.includes(bMMD);
-  const wrap = document.getElementById('bm-cr');
-  if(!wrap) return;
-  if(!isSpecial){
-    wrap.innerHTML = cols.map(c=>`<button class="cb${bMC===c?' on':''}" onclick="bMSetCol('${c}')">${c}</button>`).join('');
-    wrap.className = 'crow';
-  } else {
-    wrap.className = '';
-    let h='';
-    ['S1','S2'].forEach(safe=>{
-      h+=`<div style="margin-bottom:8px"><div style="color:var(--mu);font-size:11px;font-weight:600;margin-bottom:5px">🗄 Safe ${safe.slice(1)}</div>`;
-      for(let sh=0;sh<5;sh++){
-        h+=`<div class="crow" style="margin-bottom:4px">`;
-        for(let ci=0;ci<3;ci++){
-          const l=SHELF_LETTERS[sh*3+ci], col=safe+l;
-          h+=`<button class="cb${bMC===col?' on':''}" onclick="bMSetCol('${col}')" style="min-width:52px">${safe.slice(1)}-${l}</button>`;
-        }
-        h+=`</div>`;
-      }
-      h+=`</div>`;
-    });
-    wrap.innerHTML=h;
-  }
-}
-function bMSetCol(c){ bMC=c; bBuildMoveCR(); bUpdateMP(); }
-
-function bSK(md,sd,c){ return md+'|'+(sd==null?'-':sd)+'|'+c; }
-function bPK(k){ const p=k.split('|'); return{md:+p[0],sd:p[1]==='-'?null:+p[1],col:p[2]}; }
-function bSM(){
-  const m={};
-  Object.values(bFiles).filter(f=>!f.hidden).forEach(f=>{
-    const k=bSK(f.md,f.sd,f.col); if(!m[k])m[k]=[]; m[k].push(f);
-  });
-  return m;
-}
-function bCC(arr){
-  if(!arr||!arr.length) return 'sc-e';
-  if(arr.some(f=>f.st==='missing')) return 'sc-m';
-  return arr.length>=40?'sc-f': arr.length>=25?'sc-h':'sc-e';
-}
-
-// ── GRID: date list ──
-function bRenderGrid(){
-  const m = bSM();
-  const dates = [...new Set(Object.values(bFiles).filter(f=>!f.hidden).map(f=>f.md))].sort((a,b)=>a-b);
-  const gc = document.getElementById('bgc');
-  if(!dates.length){ gc.innerHTML='<div class="bempty">Koi file nahi. Add tab se shuru karo.</div>'; return; }
-
-  let h='';
-  dates.forEach(date=>{
-    const allInDate = Object.values(bFiles).filter(f=>!f.hidden && f.md===date);
-    const tot = allInDate.length;
-    const missCount = allInDate.filter(f=>f.st==='missing').length;
-    const maxSlotFiles = Math.max(0,...Object.entries(m)
-      .filter(([k])=>+k.split('|')[0]===date)
-      .map(([,arr])=>arr.length));
-    const cls = maxSlotFiles>=40?'sc-f': maxSlotFiles>=25?'sc-h':'sc-e';
-
-    h += `<button class="sc ${cls}" style="width:100%;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;padding:14px 16px"
-      onclick="bOpenDate(${date})">
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:28px;font-weight:800;color:${cls==='sc-e'?'var(--mu)':cls==='sc-h'?'var(--ambh)':'var(--dan)'}">${date}</span>
-        <div style="text-align:left">
-          <div style="font-size:13px;font-weight:600;color:var(--txt)">${tot} files</div>
-          ${missCount>0?`<div style="font-size:11px;color:var(--dan);font-weight:700">⚠ ${missCount} missing</div>`:''}
-          ${SPECIAL_DATES.includes(date)?'<div style="font-size:10px;color:var(--inf);font-weight:600">🗄 S1 + S2 Safe</div>':''}
+    <!-- बैकग्राउंड कैनवास -->
+    <canvas id="bgCanvas" aria-hidden="true"></canvas>
+    <div class="bg-overlay" aria-hidden="true"></div>
+
+    <!-- मुख्य कंटेंट -->
+    <main class="main-content min-h-screen py-6 px-4 md:px-8">
+        <div class="max-w-3xl mx-auto">
+
+            <!-- हेडर -->
+            <header class="text-center mb-8 fade-in">
+                <div class="inline-flex items-center gap-3 mb-4">
+                    <span class="text-3xl om-pulse" style="color: var(--accent-bright);">ॐ</span>
+                    <div>
+                        <h1 class="text-2xl md:text-3xl font-bold tracking-wide" style="color: var(--accent-bright);">
+                            वैदिक ऋचा
+                        </h1>
+                        <p class="text-xs md:text-sm tracking-widest" style="color: var(--muted);">
+                            DAILY VEDIC HYMN
+                        </p>
+                    </div>
+                    <span class="text-3xl om-pulse" style="color: var(--accent-bright);">ॐ</span>
+                </div>
+                <p class="text-sm" style="color: var(--muted);">
+                    प्रतिदिन एक ऋचा — वेदों का अमरत्व
+                </p>
+            </header>
+
+            <!-- वेद चयन टैब्स -->
+            <nav class="ved-tabs flex flex-wrap justify-center gap-2 mb-6 fade-in" aria-label="वेद चयन">
+                <button class="ved-tab active" data-ved="rigveda">ऋग्वेद</button>
+                <button class="ved-tab" data-ved="yajurveda">यजुर्वेद</button>
+                <button class="ved-tab" data-ved="samaveda">सामवेद</button>
+                <button class="ved-tab" data-ved="atharvaveda">अथर्ववेद</button>
+            </nav>
+
+            <!-- तारीख और काउंटर -->
+            <div class="flex justify-between items-center mb-4 fade-in">
+                <p class="text-xs" style="color: var(--muted);" id="dateDisplay"></p>
+                <p class="text-xs" style="color: var(--muted);" id="counterDisplay"></p>
+            </div>
+
+            <!-- ऋचा कार्ड -->
+            <section class="richa-card p-6 md:p-10 mb-6 fade-in" id="richaCard">
+                <!-- दीपक और मंत्र नंबर -->
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-3">
+                        <svg class="diya-flame" width="28" height="36" viewBox="0 0 28 36" fill="none" aria-hidden="true">
+                            <ellipse cx="14" cy="8" rx="7" ry="8" fill="url(#flameGrad)" opacity="0.9"/>
+                            <ellipse cx="14" cy="10" rx="4" ry="5" fill="#fff3b0" opacity="0.7"/>
+                            <rect x="10" y="16" width="8" height="4" rx="1" fill="#8B6914"/>
+                            <path d="M6 20 Q14 28 22 20" stroke="#8B6914" stroke-width="2" fill="none"/>
+                            <defs>
+                                <radialGradient id="flameGrad" cx="0.5" cy="0.8" r="0.6">
+                                    <stop offset="0%" stop-color="#fff7cc"/>
+                                    <stop offset="40%" stop-color="#f0a030"/>
+                                    <stop offset="100%" stop-color="#c04000" stop-opacity="0.6"/>
+                                </radialGradient>
+                            </defs>
+                        </svg>
+                        <span class="text-xs tracking-wider" style="color: var(--muted);" id="mantraNumber"></span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="share-btn" onclick="shareRicha()" title="शेयर करें" aria-label="शेयर करें">
+                            <i class="fas fa-share-alt"></i>
+                        </button>
+                        <button class="share-btn" onclick="copyRicha()" title="कॉपी करें" aria-label="कॉपी करें">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- संस्कृत ऋचा -->
+                <div class="font-shloka sanskrit-text mb-6" id="sanskritText"></div>
+
+                <!-- पद-पद अर्थ -->
+                <div class="text-center mb-6">
+                    <p class="text-xs tracking-wider mb-2" style="color: var(--muted);">पद-पद अर्थ</p>
+                    <p class="text-sm leading-relaxed" style="color: var(--text); opacity: 0.8;" id="wordMeaning"></p>
+                </div>
+
+                <!-- ऑडियो प्लेयर -->
+                <div class="audio-player mb-2">
+                    <div class="flex items-center gap-4">
+                        <button class="play-btn" id="playBtn" onclick="toggleAudio()" aria-label="बजाएँ / रोकें">
+                            <i class="fas fa-play" id="playIcon"></i>
+                        </button>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3">
+                                <span class="text-xs" style="color: var(--muted);" id="currentTime">0:00</span>
+                                <div class="progress-track flex-1" id="progressTrack" onclick="seekAudio(event)">
+                                    <div class="progress-fill" id="progressFill"></div>
+                                </div>
+                                <span class="text-xs" style="color: var(--muted);" id="totalTime">0:00</span>
+                            </div>
+                            <div class="flex items-center gap-2 mt-2">
+                                <div class="flex items-end gap-[2px] h-5" id="waveform" aria-hidden="true"></div>
+                                <span class="text-xs ml-2" style="color: var(--muted);">AI संस्कृत उच्चारण</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- व्याख्या शीर्षक -->
+            <div class="flex items-center gap-3 mb-4 fade-in">
+                <div class="h-px flex-1" style="background: linear-gradient(90deg, transparent, var(--border));"></div>
+                <h2 class="text-sm tracking-widest font-semibold" style="color: var(--accent);">
+                    <i class="fas fa-om mr-2"></i>आचार्यों की व्याख्या
+                </h2>
+                <div class="h-px flex-1" style="background: linear-gradient(270deg, transparent, var(--border));"></div>
+            </div>
+
+            <!-- व्याख्या कार्ड्स -->
+            <div class="space-y-4 mb-8" id="vyakhyaContainer"></div>
+
+            <!-- नेविगेशन -->
+            <div class="flex justify-between items-center mb-8 fade-in">
+                <button class="nav-btn" id="prevBtn" onclick="navigate(-1)">
+                    <i class="fas fa-chevron-left mr-2"></i>पिछली ऋचा
+                </button>
+                <button class="nav-btn" id="randomBtn" onclick="randomRicha()">
+                    <i class="fas fa-random mr-2"></i>कोई भी
+                </button>
+                <button class="nav-btn" id="nextBtn" onclick="navigate(1)">
+                    अगली ऋचा<i class="fas fa-chevron-right ml-2"></i>
+                </button>
+            </div>
+
+            <!-- डाउनलोड सेक्शन -->
+            <section class="richa-card p-6 mb-8 fade-in">
+                <h3 class="text-sm font-semibold mb-4 text-center tracking-wider" style="color: var(--accent);">
+                    <i class="fas fa-download mr-2"></i>इमेज डाउनलोड करें
+                </h3>
+                <p class="text-xs text-center mb-4" style="color: var(--muted);">
+                    AI जनरेटेड सुंदर छवि — सोशल मीडिया शेयर के लिए
+                </p>
+                <div class="flex flex-wrap justify-center gap-3">
+                    <button class="download-btn" onclick="downloadImage('warm')">
+                        <i class="fas fa-fire mr-2"></i>सूर्योदय थीम
+                    </button>
+                    <button class="download-btn" onclick="downloadImage('dark')">
+                        <i class="fas fa-moon mr-2"></i>रात्रि ध्यान थीम
+                    </button>
+                    <button class="download-btn" onclick="downloadImage('golden')">
+                        <i class="fas fa-sun mr-2"></i>स्वर्ण थीम
+                    </button>
+                </div>
+                <!-- प्रीव्यू -->
+                <div class="mt-4 flex justify-center">
+                    <canvas id="previewCanvas" width="540" height="720" style="border-radius: 12px; max-width: 100%; height: auto; border: 1px solid var(--border); display: none;"></canvas>
+                </div>
+            </section>
+
+            <!-- फुटर -->
+            <footer class="text-center py-6 fade-in">
+                <p class="text-xs" style="color: var(--muted);">
+                    ॐ शान्तिः शान्तिः शान्तिः
+                </p>
+                <p class="text-xs mt-2" style="color: rgba(138,117,96,0.5);">
+                    वैदिक ऋचा — AI प्रेरित दैनिक वेद अध्ययन
+                </p>
+            </footer>
         </div>
-      </div>
-      <span style="color:var(--mu);font-size:18px">›</span>
-    </button>`;
+    </main>
 
-    // Rearrange mode: show files inline
-    if(bRM){
-      allInDate.forEach(f=>{
-        h+=`<div style="margin:-6px 0 8px 14px"><button class="rmfb" onclick="bOpenMove('${esc(f.id)}')" style="display:inline-block;width:auto;margin-right:4px">⇄ ${esc(f.id)} (${dispCol(f.col)})</button></div>`;
-      });
+    <!-- टोस्ट -->
+    <div class="toast" id="toast"></div>
+
+    <!-- ऑडियो (छुपा हुआ) -->
+    <audio id="audioElement" preload="none"></audio>
+
+    <script>
+    // ===== ऋचा डेटा =====
+    const richaDB = {
+        rigveda: [
+            {
+                id: 'rv-1-1-1',
+                mandal: '1', sukta: '1', mantra: '1',
+                devanagari: 'अग्निमीळे पुरोहितं यज्ञस्य देवमृत्विजम् । होतारं रत्नधातमम् ॥',
+                transliteration: 'Agnimīḷe purohitaṃ yajñasya devamṛtvijam | Hotāraṃ ratnadhātamam ||',
+                wordMeaning: 'अग्निम् — अग्नि को; ईळे — मैं स्तुति करता हूँ; पुरोहितम् — पुरोहित को; यज्ञस्य — यज्ञ के; देवम् — देवता को; ऋत्विजम् — ऋत्विज् को; होतारम् — होता को; रत्नधातमम् — रत्नों (धन-सम्पदा) के दाता को।',
+                vyakhya: [
+                    {
+                        guru: 'आदि शंकराचार्य',
+                        period: '8वीं शताब्दी',
+                        color: '#e07020',
+                        initials: 'शं',
+                        text: 'अग्नि ब्रह्म का प्रतीक है। "अग्निमीळे" का तात्पर्य है कि जीवात्मा जो ब्रह्म की ओर उन्मुख है, उसकी साधना करें। पुरोहित वह है जो साधक को ब्रह्ममार्ग पर अग्रसर कराता है। यह ऋचा अद्वैत दर्शन का सूत्र है — जीव-ब्रह्म ऐक्य की ओर संकेत।'
+                    },
+                    {
+                        guru: 'स्वामी दयानन्द सरस्वती',
+                        period: '19वीं शताब्दी',
+                        color: '#d4a03c',
+                        initials: 'दय',
+                        text: 'अग्नि एक भौतिक तत्व है जो यज्ञ क्रिया में अनिवार्य है। "ईळे" का अर्थ है प्रेमपूर्वक स्तुति करना, न कि अंधविश्वास से। वेद केवल एक ईश्वर की उपासना सिखाते हैं — अग्नि उस ईश्वर का प्रतिनिधि है, स्वयं ईश्वर नहीं। "रत्नधातमम्" — वह ज्ञान, धर्म और आरोग्य रूपी रत्न देता है।'
+                    },
+                    {
+                        guru: 'सायणाचार्य',
+                        period: '14वीं शताब्दी',
+                        color: '#c05050',
+                        initials: 'साय',
+                        text: 'अग्नि वह देवता है जो समस्त देवताओं का मुख और प्रतिनिधि है। "ऋत्विजम्" — ऋतुओं के अनुसार यज्ञ करने वाले पुरोहित। "होता" — वह जो हवन की आहुति देवताओं तक पहुँचाता है। अग्नि तीनों लोकों का संचालक और रत्नों (सम्पदा) का दाता है।'
+                    },
+                    {
+                        guru: 'महर्षि अरविन्द',
+                        period: '20वीं शताब्दी',
+                        color: '#40a080',
+                        initials: 'अर',
+                        text: 'अग्नि आंतरिक जागरण का प्रतीक है — वह दैवीय शक्ति जो आत्मा में सोई हुई है और योग-साधना से जागृत होती है। "पुरोहित" — वह आंतरिक गुरु जो हमें आध्यात्मिक यात्रा में अग्रसर करता है। "रत्नधातमम्" — वह सभी आध्यात्मिक रत्न (सिद्धियाँ) प्रदान करता है।'
+                    },
+                    {
+                        guru: 'श्री औरोबिन्दो के अनुयायी / श्रीमद्भगवद्गीता टीका',
+                        period: 'आधुनिक',
+                        color: '#7070c0',
+                        initials: 'गी',
+                        text: 'यह ऋचा गीता के "यज्ञार्थात्कर्मणो न्यात्र" सिद्धांत का मूल स्रोत है। अग्नि = कर्मणि भक्ति; पुरोहित = ईश्वर की कृपा; रत्नधातमम् = फल की प्राप्ति। जो कर्म यज्ञभाव से करता है, अग्नि उसे रत्न प्रदान करता है — यह निष्काम कर्म का संदेश है।'
+                    }
+                ]
+            },
+            {
+                id: 'rv-1-1-2',
+                mandal: '1', sukta: '1', mantra: '2',
+                devanagari: 'अग्निः पूर्वेभिरृषिभिरीड्यो नूतनैरुत । स देवाँ एह वक्षति ॥',
+                transliteration: 'Agniḥ pūrvebhirmṛṣibhirīḍyo nūtanairuta | Sa devāṁ eha vakṣati ||',
+                wordMeaning: 'अग्निः — अग्नि; पूर्वेभिः — पूर्वकालीन; ऋषिभिः — ऋषियों द्वारा; ईड्यः — स्तुत किया गया; नूतनैः — नवीन; उत — भी (अब); सः — वह; देवान् — देवताओं को; इह — यहाँ; वक्षति — पहुँचाता है।',
+                vyakhya: [
+                    {
+                        guru: 'आदि शंकराचार्य',
+                        period: '8वीं शताब्दी',
+                        color: '#e07020',
+                        initials: 'शं',
+                        text: 'जो तत्व प्राचीन ऋषियों ने जाना, वही तत्व नए ऋषिगण भी अनुभव करते हैं। ब्रह्म अनादि और अनंत है — उसकी अनुभूति काल-निरपेक्ष है। "देवान् वक्षति" — वह ज्ञान-रूपी देवताओं को साधक के हृदय में पहुँचाता है।'
+                    },
+                    {
+                        guru: 'स्वामी दयानन्द सरस्वती',
+                        period: '19वीं शताब्दी',
+                        color: '#d4a03c',
+                        initials: 'दय',
+                        text: 'अग्नि की उपयोगिता शाश्वत है — प्राचीन ऋषियों ने जिसे जाना, वह आज भी उतना ही महत्वपूर्ण है। वेद का ज्ञान अनंत काल तक वैध रहेगा। "नूतनैरुत" — नई पीढ़ी को भी वही विद्या ग्रहण करनी चाहिए, कोई नया "धर्म" नहीं बनाना चाहिए।'
+                    },
+                    {
+                        guru: 'सायणाचार्य',
+                        period: '14वीं शताब्दी',
+                        color: '#c05050',
+                        initials: 'साय',
+                        text: 'अग्नि ने पूर्वकालीन ऋषियों की यज्ञ-क्रिया में सहायता की, अब वह नए ऋषियों की भी सहायता करेगा। वह देवताओं को हवन-अग्नि से आहुति पहुँचाता है। यह अग्नि की निरंतरता और कालातीत सत्ता का वर्णन है।'
+                    },
+                    {
+                        guru: 'महर्षि अरविन्द',
+                        period: '20वीं शताब्दी',
+                        color: '#40a080',
+                        initials: 'अर',
+                        text: 'आध्यात्मिक अनुभूति सदैव समान रहती है — चाहे प्राचीन काल हो या आधुनिक। आंतरिक अग्नि (जागरण-शक्ति) हर युग में साधकों का मार्गदर्शन करती है। "देवान्" — विभिन्न दैवीय गुण जो इस अग्नि द्वारा प्रकट होते हैं।'
+                    },
+                    {
+                        guru: 'स्वामी विवेकानन्द',
+                        period: '19-20वीं शताब्दी',
+                        color: '#7070c0',
+                        initials: 'वि',
+                        text: 'यह वेद की सार्वभौमिकता का घोषणा-मंत्र है! जो सत्य प्राचीन ऋषियों ने देखा, वही सत्य आज का युवा भी देख सकता है। वेद किसी एक जाति, देश या काल के लिए नहीं — समस्त मानवता के लिए हैं। अग्नि = ज्ञान की ज्वाला जो हर पीढ़ी में नई करें जलती है।'
+                    }
+                ]
+            },
+            {
+                id: 'rv-10-129-1',
+                mandal: '10', sukta: '129', mantra: '1',
+                devanagari: 'नासदासीन्नो सदासीत्तदानीम् । नासीद्रजो नो व्योमा परो यत् ॥',
+                transliteration: 'Nāsadāsīnno sadāsīttadānīm | Nāsīdrajo no vyoma paro yat ||',
+                wordMeaning: 'न असत् — असत्य (नाशवान) नहीं था; असीत् — नहीं था; न सत् — सत्य (शाश्वत) भी नहीं था; तदानीम् — उस समय; न असीद् — नहीं था; रजः — अंधकार; नो — और न; व्योम — आकाश; परः — उच्च; यत् — जो (कुछ भी)।',
+                vyakhya: [
+                    {
+                        guru: 'आदि शंकराचार्य',
+                        period: '8वीं शताब्दी',
+                        color: '#e07020',
+                        initials: 'शं',
+                        text: 'यह अद्वैत दर्शन का सर्वोच्च सूत्र है। सृष्टि के पूर्व न सत् था, न असत् — क्योंकि दोनों विकार हैं, और ब्रह्म निर्विकार है। यह ऋचा "नेति नेति" (इससे नहीं, इससे भी नहीं) का साक्षात्कार है — ब्रह्म की परिभाषा नकारात्मक रूप से दी गई है।'
+                    },
+                    {
+                        guru: 'स्वामी दयानन्द सरस्वती',
+                        period: '19वीं शताब्दी',
+                        color: '#d4a03c',
+                        initials: 'दय',
+                        text: 'यह ऋचा सृष्टि से पहले की अवस्था का वर्णन करती है — जब न तो धरती थी, न आकाश। यह वैज्ञानिक दृष्टि से भी सही है — बिग बैंग से पहले की अवस्था का वर्णन। वेद में कहीं भी "शून्य से सृष्टि" नहीं कहा गया — ईश्वर था, उसकी इच्छा से सृष्टि हुई।'
+                    },
+                    {
+                        guru: 'सायणाचार्य',
+                        period: '14वीं शताब्दी',
+                        color: '#c05050',
+                        initials: 'साय',
+                        text: 'प्रलयकाल में समस्त चराचर अव्यक्त रूप में लीन हो जाता है। न सत् (व्यक्त) था, न असत् (अव्यक्त भी नहीं था जैसा हम जानते हैं)। रजः = अंधकार, व्योम = आकाश — ये भी अभाव में थे। यह महाप्रलय की अवस्था का चित्रण है।'
+                    },
+                    {
+                        guru: 'महर्षि अरविन्द',
+                        period: '20वीं शताब्दी',
+                        color: '#40a080',
+                        initials: 'अर',
+                        text: 'यह सर्वोच्च चेतना की निर्गुण-निराकार अवस्था है — जहाँ सत् और असत् दोनों विलीन हैं। यह "सुप्रमेंटल" चेतना का स्रोत है। यहाँ से सृष्टि की यात्रा शुरू होती है — अचेतन से चेतन की ओर, असत् से सत् की ओर। यह अतींद्रिय अनुभूति है, बौद्धिक नहीं।'
+                    },
+                    {
+                        guru: 'डॉ. सर्वपल्ली राधाकृष्णन',
+                        period: '20वीं शताब्दी',
+                        color: '#7070c0',
+                        initials: 'रा',
+                        text: 'यह ऋचा भारतीय दर्शन की सबसे गहरी चिंतन-परंपरा का प्रतिनिधित्व करती है। "न सत् न असत्" — यह पश्चिमी द्विवाद (dualism) से परे है। यहाँ अस्तित्व की ही परिभाषा चुनौती दी गई है। यही कारण है कि वैदांत विश्व के सबसे उन्नत दार्शनिक विचारों में गिना जाता है।'
+                    }
+                ]
+            },
+            {
+                id: 'rv-10-129-2',
+                mandal: '10', sukta: '129', mantra: '2',
+                devanagari: 'देवयोनिरधि सर्वे न सदासीन्दजायत । को अद्धा वेद को इह प्रवोचत् ॥',
+                transliteration: 'Devayoniradhi sarve na sadāsīndajāyata | Ko addhā veda ko iha pravocat ||',
+                wordMeaning: 'देवयोनिः — देवताओं का उत्पत्ति-स्थान; अधि — ऊपर; सर्वे — सभी; न — नहीं; सदासीत् — अस्तित्व में था; अजायत — उत्पन्न हुआ; कः — कौन; अद्धा — निश्चित रूप से; वेद — जानता है; कः — कौन; इह — यहाँ; प्रवोचत् — घोषणा कर सकता है।',
+                vyakhya: [
+                    {
+                        guru: 'आदि शंकराचार्य',
+                        period: '8वीं शताब्दी',
+                        color: '#e07020',
+                        initials: 'शं',
+                        text: '"देवयोनिः" = ब्रह्म — जो सभी देवताओं (शक्तियों) का कारण है। वह "अधि सर्वे" — सबके ऊपर, अतीत है। "को वेद" — इसका उत्तर है: कोई नहीं जानता, क्योंकि ब्रह्म ज्ञाता से परे है। यह ऋचा ब्रह्म-ज्ञान की दुर्लभता को दर्शाती है।'
+                    },
+                    {
+                        guru: 'स्वामी दयानन्द सरस्वती',
+                        period: '19वीं शताब्दी',
+                        color: '#d4a03c',
+                        initials: 'दय',
+                        text: '"देवयोनिः" का अर्थ है ईश्वर — जिसने सृष्टि की। सृष्टि से पहले कोई देवता नहीं था — ईश्वर ने सब कुछ बनाया। "को वेद" — सृष्टि के रहस्य को केवल वेद जानते हैं, क्योंकि वे ईश्वर की देन हैं। अन्य कोई शास्त्र इस रहस्य को नहीं जानता।'
+                    },
+                    {
+                        guru: 'सायणाचार्य',
+                        period: '14वीं शताब्दी',
+                        color: '#c05050',
+                        initials: 'साय',
+                        text: 'देवयोनि = प्रजापति ब्रह्मा, जो देवताओं के उत्पत्ति-स्थान हैं। प्रलय में वे भी अभाव में थे। "को अद्धा वेद" — इस रहस्य को न तब कोई जानता था, न अब कोई पूर्ण रूप से जान सकता है। यह ईश्वर की अपारता का गूँज है।'
+                    },
+                    {
+                        guru: 'महर्षि अरविन्द',
+                        period: '20वीं शताब्दी',
+                        color: '#40a080',
+                        initials: 'अर',
+                        text: '"देवयोनिः" = सुप्रमेंटल चैतन्य — जहाँ से दिव्य गुणों की उत्पत्ति होती है। यह चेतना का उच्चतम स्तर है। "को वेद" — यह प्रश्न वास्तव में एक ध्यान-सूत्र है — इस प्रश्न को गहराई से अनुभव करो, उत्तर मिलेगा। यह बौद्धिक जिज्ञासा नहीं, आध्यात्मिक साधना है।'
+                    },
+                    {
+                        guru: 'डॉ. सर्वपल्ली राधाकृष्णन',
+                        period: '20वीं शताब्दी',
+                        color: '#7070c0',
+                        initials: 'रा',
+                        text: 'यह ऋचा हमें विनम्रता सिखाती है — सृष्टि के रहस्य पर घमंड नहीं करना चाहिए। "को वेद, को प्रवोचत्" — यह प्रश्न विज्ञान भी पूछ रहा है, दर्शन भी। भारतीय चिंतन में "नहीं जानना" भी एक ज्ञान है — अज्ञान स्वीकार करना सबसे बड़ी बुद्धि है।'
+                    }
+                ]
+            },
+            {
+                id: 'rv-1-89-1',
+                mandal: '1', sukta: '89', mantra: '1',
+                devanagari: 'वरुणो मयस्कार्णवे अर्चन्ति विश्वेदेवाः । यस्य प्रष्ठे सोम इव तिष्ठति ॥',
+                transliteration: 'Varuṇo mayaskārṇave arcanti viśvedevāḥ | Yasya praṣṭhe soma iva tiṣṭhati ||',
+                wordMeaning: 'वरुणः — वरुण देवता; मयस्कार्णवे — जल-सागर में; अर्चन्ति — आराधना करते हैं; विश्वेदेवाः — सभी देवता; यस्य — जिसके; प्रष्ठे — पीछे; सोमः इव — सोम के समान; तिष्ठति — स्थित है।',
+                vyakhya: [
+                    {
+                        guru: 'आदि शंकराचार्य',
+                        period: '8वीं शताब्दी',
+                        color: '#e07020',
+                        initials: 'शं',
+                        text: 'वरुण = सर्वव्यापी ब्रह्म जो जल-रूप में विराजमान है। "मयस्कार्णवे" — माया-सागर में, जो संसार है। सभी देवता (शक्तियाँ) वास्तव में ब्रह्म की ही अभिव्यक्ति हैं। सोम = आनंद-स्वरूप ब्रह्म जो सदा उपस्थित रहता है।'
+                    },
+                    {
+                        guru: 'स्वामी दयानन्द सरस्वती',
+                        period: '19वीं शताब्दी',
+                        color: '#d4a03c',
+                        initials: 'दय',
+                        text: 'वरुण जल-देवता हैं जो वर्षा और जल-संचय के अधिपति हैं। "मयस्कार्णवे" — विशाल जलाशय में। अन्य देवता उनकी शक्तियों के कारण कार्य करते हैं। यह ऋचा प्रकृति के नियमों और ईश्वर की व्यवस्था पर जोर देती है। वर्षा के बिना जीवन असंभव है — यह प्राकृतिक सत्य है।'
+                    },
+                    {
+                        guru: 'सायणाचार्य',
+                        period: '14वीं शताब्दी',
+                        color: '#c05050',
+                        initials: 'साय',
+                        text: 'वरुण सागरों के स्वामी हैं। सभी देवता उनकी स्तुति में समुद्र-तट पर एकत्र होते हैं। "सोम इव तिष्ठति" — जैसे सोमरस पीने के लिए तैयार रहता है, वैसे ही वरुण देवताओं के पीछे सदा उपस्थित रहते हैं — सहायक के रूप में।'
+                    },
+                    {
+                        guru: 'महर्षि अरविन्द',
+                        period: '20वीं शताब्दी',
+                        color: '#40a080',
+                        initials: 'अर',
+                        text: 'वरुण = अवचेतन मन का सागर — जिसमें सभी चेतना-स्तर डूबे हैं। "मयस्कार्णवे" = मनो-सागर में। विश्वेदेवाः = विभिन्न मानसिक शक्तियाँ। सोम = आध्यात्मिक आनंद जो अवचेतन के पीछे छिपा है और ध्यान से प्राप्त होता है।'
+                    },
+                    {
+                        guru: 'स्वामी विवेकानन्द',
+                        period: '19-20वीं शताब्दी',
+                        color: '#7070c0',
+                        initials: 'वि',
+                        text: 'वरुण उस अनंत शक्ति का प्रतीक है जो समुद्र को नियंत्रित करती है। यह ऋचा प्रकृति-उपासना का सुंदर उदाहरण है — वेद में प्रकृति की निंदा नहीं, आराधना है! जल का सम्मान करो, जंगल का सम्मान करो — यही वैदिक पर्यावरण-चिंतन है।'
+                    }
+                ]
+            }
+        ],
+        yajurveda: [
+            {
+                id: 'yv-40-1',
+                mandal: '40', sukta: '-', mantra: '1',
+                devanagari: 'ईशावास्यमिदं सर्वं यत्किञ्च जगत्यां जगत् । तेन त्यक्तेन भुञ्जीथा मा गृधः कस्यस्विद्धनम् ॥',
+                transliteration: 'Īśāvāsyamidaṃ sarvaṃ yatkiñca jagatyāṃ jagat | Tena tyaktena bhuñjīthā mā gṛdhaḥ kasyasviddhanam ||',
+                wordMeaning: 'ईशः — ईश्वर; आवास्यम् — निवास करता है; इदम् — यह; सर्वम् — सब; यत्किञ्च — जो कुछ भी; जगत्याम् — जगत में; जगत् — चल-अचल; तेन — उससे; त्यक्तेन — त्याग करके; भुञ्जीथा — भोग करो; मा — मत; गृधः — लोभ करो; कस्यस्वित् — किसी का; धनम् — धन।',
+                vyakhya: [
+                    {
+                        guru: 'आदि शंकराचार्य',
+                        period: '8वीं शताब्दी',
+                        color: '#e07020',
+                        initials: 'शं',
+                        text: 'यह अद्वैत वेदांत का मूलमंत्र है। समस्त जगत् ब्रह्म से आच्छादित (वास्य) है — ब्रह्म इसमें व्याप्त है। "त्यक्तेन भुञ्जीथा" — ममत्व-त्याग करके भोग करो, क्योंकि सब कुछ ब्रह्म का है। लोभ अज्ञान का पुत्र है — जो जानता है कि सब ब्रह्म है, वह लोभ नहीं करता।'
+                    },
+                    {
+                        guru: 'स्वामी दयानन्द सरस्वती',
+                        period: '19वीं शताब्दी',
+                        color: '#d4a03c',
+                        initials: 'दय',
+                        text: 'ईश्वर समस्त सृष्टि का स्वामी है। "त्यक्तेन भुञ्जीथा" — जो चीज़ तुम्हारी विधि-विधान से अधिक है, उसे त्याग दो; जो तुम्हारा अधिकार है, उसका उपयोग करो। "मा गृधः" — पर का धन लोभ से मत लो। यह स्पष्ट नैतिक उपदेश है — सनातन धर्म का सार।'
+                    },
+                    {
+                        guru: 'सायणाचार्य',
+                        period: '14वीं शताब्दी',
+                        color: '#c05050',
+                        initials: 'साय',
+                        text: 'ईश्वर ने इस सम्पूर्ण जगत् का निर्माण किया और उसमें वास करता है। सब कुछ उसी का है। "त्यक्तेन" — यज्ञ के लिए अर्पित करके; "भुञ्जीथा" — शेष भोग करो। यज्ञ-भाग निकालकर ही भोजन करना चाहिए — यह गृहस्थ-धर्म का नियम है।'
+                    },
+                    {
+                        guru: 'महर्षि अरविन्द',
+                        period: '20वीं शताब्दी',
+                        color: '#40a080',
+                        initials: 'अर',
+                        text: 'ईश = दैवीय चेतना जो सर्वत्र व्याप्त है। "आवास्यम्" — न केवल बाहर, अंदर भी। "त्यक्तेन भुञ्जीथा" — अहंकार-त्याग से जीवन का अनुभव करो। जब तुम अहंकार छोड़ते हो, तभी वास्तविक भोग (आनंद) शुरू होता है। लोभ = अहंकार की छाया।'
+                    },
+                    {
+                        guru: 'महात्मा गांधी',
+                        period: '20वीं शताब्दी',
+                        color: '#7070c0',
+                        initials: 'गा',
+                        text: 'यह एक मंत्र है जिसने मेरा जीवन बदल दिया। "त्यक्तेन भुञ्जीथा" — अपनार्थ त्याग करो, परार्थ में रुचि रखो। "मा गृधः" — पर की सम्पत्ति पर लालच मत करो। यही निष्काम कर्म का सूत्र है। अगर पूरा विश्व इस एक मंत्र का पालन करे, तो सभी समस्याएँ समाप्त हो जाएँ।'
+                    }
+                ]
+            },
+            {
+                id: 'yv-40-2',
+                mandal: '40', sukta: '-', mantra: '2',
+                devanagari: 'कुर्वन्नेवेह कर्माणि जिजीविषेच्छतं समाः । एवं त्वयि नान्यथेतोऽस्ति न कर्म लिप्यते नरे ॥',
+                transliteration: 'Kurvanneveha karmāṇi jijīviṣecchhataṃ samāḥ | Evaṃ tvayi nānyatheto\'sti na karma lipyate nare ||',
+                wordMeaning: 'कुर्वन् — कर्म करते हुए; एव — ही; इह — इस लोक में; कर्माणि — कर्मों को; जिजीविषेत् — जीवन-कामना करे; शतं समाः — सौ वर्ष; एवम् — इस प्रकार; त्वयि — तुम्हारे लिए; न अन्यथा — अन्यथा नहीं; इतः — इससे; अस्ति — है; न — नहीं; कर्म — कर्म; लिप्यते — लिप्त होता है; नरे — मनुष्य में।',
+                vyakhya: [
+                    {
+                        guru: 'आदि शंकराचार्य',
+                        period: '8वीं शताब्दी',
+                        color: '#e07020',
+                        initials: 'शं',
+                        text: 'कर्म करो, लेकिन संस्कार-रहित (निष्काम)। "शतं समाः" — यह केवल उदाहरण है, वास्तव में जब तक प्रारब्ध कर्म शेष है, तब तक जीवन-कामना स्वाभाविक है। किंतु "न कर्म लिप्यते" — ज्ञानी को कर्म बंधन नहीं करता, क्योंकि वह अहंकार रहित कर्म करता है।'
+                    },
+                    {
+                        guru: 'स्वामी दयानन्द सरस्वती',
+                        period: '19वीं शताब्दी',
+                        color: '#d4a03c',
+                        initials: 'दय',
+                        text: 'कर्म करना अनिवार्य है — कर्म-त्याग का कोई स्थान वेद में नहीं है। "शतं समाः" — सौ वर्ष का स्वस्थ जीवन जीओ, यह वैदिक आदर्श है। "न कर्म लिप्यते" — जो विधि-विधान से कर्म करता है, वह पाप से नहीं लिप्त होता। निष्काम कर्म का अर्थ कर्म-विराग नहीं, कर्म-शुद्धि है।'
+                    },
+                    {
+                        guru: 'सायणाचार्य',
+                        period: '14वीं शताब्दी',
+                        color: '#c05050',
+                        initials: 'साय',
+                        text: 'इहलोक में ही कर्म करते रहो — मृत्यु के बाद कोई कर्म नहीं। "शतं समाः" — लंबा जीवन कामना करो। जो इस प्रकार यज्ञादि कर्म करता है, उसे कर्म-बंधन नहीं होता। यह कर्मयोग का स्पष्ट निर्देश है।'
+                    },
+                    {
+                        guru: 'महर्षि अरविन्द',
+                        period: '20वीं शताब्दी',
+                        color: '#40a080',
+                        initials: 'अर',
+                        text: 'जीवन में पूर्णतः सक्रिय रहो — "कुर्वन् एव" — लेकिन आंतरिक रूप से निरलिप्त। सक्रियता बाहर, शांति भीतर — यही अभ्यास है। "न लिप्यते" — जब कर्म में अहंकार नहीं होता, तो वह बंधन नहीं बनता, बल्कि मुक्ति का साधन बनता है।'
+                    },
+                    {
+                        guru: 'लोकमान्य तिलक',
+                        period: '19-20वीं शताब्दी',
+                        color: '#7070c0',
+                        initials: 'ति',
+                        text: 'यह गीता के "कर्मण्येवाधिकारस्ते" का मूल स्रोत है! "कुर्वन् एव" — कर्म करने का अधिकार तुम्हारा अधिकार है। "शतं समाः" — सौ वर्ष का राष्ट्रीय जीवन जीओ, यह राष्ट्र-निर्माण का आह्वान है। "न लिप्यते" — जो राष्ट्र-हित में कर्म करता है, वह पाप से मुक्त रहता है।'
+                    }
+                ]
+            }
+        ],
+        samaveda: [
+            {
+                id: 'sv-1-1-1',
+                mandal: '1', sukta: '1', mantra: '1',
+                devanagari: 'अग्न आ याहि वीतये गृणानो होता सदम् । देवं देवेभ्यो विद्वान् ॥',
+                transliteration: 'Agna ā yāhi vītaye gṛṇāno hota sadam | Devaṃ devebhyo vidvān ||',
+                wordMeaning: 'अग्ने — हे अग्नि; आ याहि — इधर आओ; वीतये — विजय-प्राप्ति के लिए; गृणानः — स्तुति करते हुए; होतः — होता (यज्ञ-कर्ता) सदम् — सद्यः; देवम् — देवता को; देवेभ्यः — देवताओं के लिए; विद्वान् — जानने वाला।',
+                vyakhya: [
+                    {
+                        guru: 'आदि शंकराचार्य',
+                        period: '8वीं शताब्दी',
+                        color: '#e07020',
+                        initials: 'शं',
+                        text: 'सामवेद की यह प्रारंभिक ऋचा नाद-योग का द्वार है। अग्नि = आंतरिक जागरण; "आ याहि" — उसे जाग्रत करो; "वीतये" — मोक्ष-प्राप्ति के लिए। सामगान का नाद ही ब्रह्म-साक्षात्कार का साधन है। यह शब्द-ब्रह्म की प्रतिष्ठा करती है।'
+                    },
+                    {
+                        guru: 'स्वामी दयानन्द सरस्वती',
+                        period: '19वीं शताब्दी',
+                        color: '#d4a03c',
+                        initials: 'दय',
+                        text: 'सामवेद ऋग्वेद के मंत्रों का गायन-रूप है। अग्नि को आमंत्रित किया जा रहा है यज्ञ में। "वीतये" — विजय के लिए, यह धर्म-युद्ध या यज्ञ-सफलता का संदर्भ हो सकता है। संगीत और छंद का उपयोग वैदिक यज्ञ का अनिवार्य अंग था।'
+                    },
+                    {
+                        guru: 'सायणाचार्य',
+                        period: '14वीं शताब्दी',
+                        color: '#c05050',
+                        initials: 'साय',
+                        text: 'उद्गाता (गायक) अग्नि से प्रार्थना करता है कि वे यज्ञ में आएँ और देवताओं तक हवन-द्रव्य पहुँचाएँ। "सदम्" — सत्य यज्ञ में; "विद्वान्" — यज्ञ-विद्। सामगान का उद्देश्य देवताओं को प्रसन्न करना है।'
+                    },
+                    {
+                        guru: 'महर्षि अरविन्द',
+                        period: '20वीं शताब्दी',
+                        color: '#40a080',
+                        initials: 'अर',
+                        text: 'साम = सुम (शांति) + गम (गमन) — शांति की ओर गमन। यह ऋचा नाद-ध्यान का आह्वान है। अग्नि = आंतरिक जागरण-शक्ति को सक्रिय करो; "वीतये" — उच्चतर चेतना-स्तर तक पहुँचो। संगीत आत्मा का भाषा है — इससे दैवीय अनुभूति होती है।'
+                    },
+                    {
+                        guru: 'पंडित रविशंकर',
+                        period: '20वीं शताब्दी',
+                        color: '#7070c0',
+                        initials: 'रवि',
+                        text: 'सामवेद भारतीय संगीत का मूल स्रोत है! यह ऋचा बताती है कि संगीत केवल मनोरंजन नहीं, यज्ञ (आध्यात्मिक साधना) का अंग है। "गृणानः" — गान करते हुए; जब संगीतकार सच्चे भाव से गाता है, तो वह "विद्वान्" — ज्ञानी बन जाता है। यही संगीत की परम उपयोगिता है।'
+                    }
+                ]
+            }
+        ],
+        atharvaveda: [
+            {
+                id: 'av-11-7-1',
+                mandal: '11', sukta: '7', mantra: '1',
+                devanagari: 'सह नाववतु सह नौ भुनक्तु सह वीर्यं करवावहै । तेजस्वि नावधीतमस्तु मा विद्विषावहै ॥',
+                transliteration: 'Sah nāvavatu sah nau bhunaktu sah vīryaṃ karavāvahai | Tejasvi nāvadhītamastu mā vidviṣāvahai ||',
+                wordMeaning: 'सह — एक साथ; नौ — हम दोनों को; अवतु — रक्षा करे; सह नौ — हम दोनों को; भुनक्तु — पोषण करे; सह — एक साथ; वीर्यम् — बल; करवावहै — हम करें; तेजस्वी — तेजस्वी; न — नहीं; अधीतम् — अध्ययन; अस्तु — हो; मा — मत; विद्विषावहै — परस्पर द्वेष करें।',
+                vyakhya: [
+                    {
+                        guru: 'आदि शंकराचार्य',
+                        period: '8वीं शताब्दी',
+                        color: '#e07020',
+                        initials: 'शं',
+                        text: 'यह गुरु-शिष्य संबंध का मंत्र है। "सह" — गुरु और शिष्य दोनों की रक्षा हो, क्योंकि ज्ञान-प्राप्ति में दोनों समान भागीदार हैं। "तेजस्वी" — ब्रह्म-ज्ञान तेजस्वी होता है। "मा विद्विषावहै" — अहंकार और द्वेष से ज्ञान नष्ट होता है, इसलिए इनसे दूर रहो।'
+                    },
+                    {
+                        guru: 'स्वामी दयानन्द सरस्वती',
+                        period: '19वीं शताब्दी',
+                        color: '#d4a03c',
+                        initials: 'दय',
+                        text: 'यह शिक्षा-प्रणाली का मूलमंत्र है। गुरुकुल में यही पहला मंत्र सिखाया जाता है। "सह" — गुरु और शिष्य का सहयोग; "वीर्यं करवावहै" — मिलकर कठिन अध्ययन करें। "मा विद्विषावहै" — परस्पर प्रेम और सम्मान रखें। यही सच्ची शिक्षा का आदर्श है।'
+                    },
+                    {
+                        guru: 'सायणाचार्य',
+                        period: '14वीं शताब्दी',
+                        color: '#c05050',
+                        initials: 'साय',
+                        text: 'यह शान्ति-मंत्र है जो अध्ययन शुरू करने से पहले गूँथा जाता है। गुरु और शिष्य दोनों की सुरक्षा, पोषण, बल-प्राप्ति की प्रार्थना। "तेजस्वी अधीतम्" — जो अध्ययन करें वह तेजस्वी हो — यह विद्या के गुण का वर्णन है।'
+                    },
+                    {
+                        guru: 'महर्षि अरविन्द',
+                        period: '20वीं शताब्दी',
+                        color: '#40a080',
+                        initials: 'अर',
+                        text: '"सह" का गहरा अर्थ है — गुरु और शिष्य में वास्तव में कोई भेद नहीं — दोनों एक ही चेतना के दो पहलू। "तेजस्वी अधीतम्" — अध्ययन जो केवल बौद्धिक न हो, चेतना को तेजस्वी बनाए। "मा विद्विषावहै" — अहंकार-द्वेष से चेतना का विकास रुक जाता है।'
+                    },
+                    {
+                        guru: 'स्वामी विवेकानन्द',
+                        period: '19-20वीं शताब्दी',
+                        color: '#7070c0',
+                        initials: 'वि',
+                        text: 'यह मंत्र भारतीय शिक्षा-दर्शन का सार है! पश्चिम में शिक्षक-छात्र संबंध व्यावसायिक है, भारत में यह आध्यात्मिक है। "सह" — एक साथ चलना; "वीर्यं" — बल पैदा करना; "मा विद्विषावहै" — ईर्ष्या से बचना। यही वह आदर्श है जिसने भारत को हजारों वर्ष ज्ञान-प्रधान बनाए रखा!'
+                    }
+                ]
+            }
+        ]
+    };
+
+    // ===== स्टेट =====
+    let currentVed = 'rigveda';
+    let currentIndex = 0;
+    let isPlaying = false;
+    let audioContext = null;
+    let audioNodes = [];
+    let audioStartTime = 0;
+    let audioDuration = 0;
+    let progressInterval = null;
+
+    // ===== डेट प्राप्त करें =====
+    function getTodayIndex() {
+        const start = new Date(2025, 0, 1);
+        const today = new Date();
+        const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+        return diff;
     }
-  });
-  gc.innerHTML = h;
-}
 
-function toggleRM(){
-  bRM=!bRM;
-  const b=document.getElementById('rbtn');
-  b.textContent=bRM?'✓ Done':'⇄ Rearrange';
-  b.classList.toggle('on',bRM);
-  bRenderGrid();
-}
+    function getCurrentRicha() {
+        const list = richaDB[currentVed];
+        if (!list || list.length === 0) return null;
+        return list[currentIndex % list.length];
+    }
 
-// ── Date detail: columns of that date ──
-function bOpenDate(date){
-  bActiveDate = date;
-  const m = bSM();
-  const isSpecial = SPECIAL_DATES.includes(date);
-  const allCols = getColsForDate(date);
+    // ===== UI अपडेट =====
+    function updateUI() {
+        const richa = getCurrentRicha();
+        if (!richa) return;
 
-  // Get all slots for this date
-  const slotsForDate = Object.entries(m)
-    .filter(([k])=>+k.split('|')[0]===date)
-    .map(([k,arr])=>({...bPK(k),arr}));
+        // तारीख
+        const today = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('dateDisplay').textContent = today.toLocaleDateString('hi-IN', options);
 
-  document.getElementById('bdd-title').textContent = `📅 Date ${date}`;
-  const tot = slotsForDate.reduce((s,x)=>s+x.arr.length,0);
-  document.getElementById('bdd-sub').textContent = `${tot} files — Slot tap karo files dekhne ke liye`;
+        // काउंटर
+        const list = richaDB[currentVed];
+        document.getElementById('counterDisplay').textContent =
+            `${richaDB[currentVed] === richaDB.rigveda ? 'ऋग्वेद' :
+              richaDB[currentVed] === richaDB.yajurveda ? 'यजुर्वेद' :
+              richaDB[currentVed] === richaDB.samaveda ? 'सामवेद' : 'अथर्ववेद'} — ${currentIndex + 1} / ${list.length}`;
 
-  let h = '';
-  if(isSpecial){
-    ['S1','S2'].forEach(safe=>{
-      const safeSlots = slotsForDate.filter(s=>s.col.startsWith(safe));
-      if(!safeSlots.length) return;
-      h += `<div style="background:#f1f5f9;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:12px;font-weight:700;color:var(--p)">🗄 Safe ${safe.slice(1)}</div>`;
-      h += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px">`;
-      safeSlots.forEach(({md,sd,col,arr})=>{
-        const cls=bCC(arr), ic=cls==='sc-e'?'⚪':cls==='sc-h'?'🟡':'🔴';
-        const ms=arr.filter(f=>f.st==='missing').length;
-        h+=`<button class="sc ${cls}" onclick="bOSlot(${md},${sd==null?'null':sd},'${esc(col)}','date')" style="padding:10px 8px">
-          <div style="display:flex;align-items:center;gap:3px"><span class="scol" style="font-size:18px">${dispCol(col)}</span><span style="font-size:12px">${ic}</span></div>
-          <div class="scnt">${arr.length}</div>
-          ${ms>0?`<div class="smiss">⚠${ms}</div>`:''}
-        </button>`;
-      });
-      h += `</div>`;
+        // मंत्र नंबर
+        document.getElementById('mantraNumber').textContent =
+            `मंडल ${richa.mandal}` + (richa.sukta !== '-' ? ` | सूक्त ${richa.sukta}` : '') + ` | मंत्र ${richa.mantra}`;
+
+        // संस्कृत ऋचा
+        document.getElementById('sanskritText').textContent = richa.devanagari;
+
+        // पद-पद अर्थ
+        document.getElementById('wordMeaning').textContent = richa.wordMeaning;
+
+        // व्याख्या कार्ड्स
+        const container = document.getElementById('vyakhyaContainer');
+        container.innerHTML = '';
+        richa.vyakhya.forEach((v, i) => {
+            const card = document.createElement('div');
+            card.className = 'vyakhya-card fade-in';
+            card.style.setProperty('--guru-color', v.color);
+            card.style.transitionDelay = `${i * 0.1}s`;
+            card.innerHTML = `
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="guru-avatar" style="background: ${v.color}20; color: ${v.color}; border: 1px solid ${v.color}40;">
+                        ${v.initials}
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold" style="color: ${v.color};">${v.guru}</h4>
+                        <p class="text-xs" style="color: var(--muted);">${v.period}</p>
+                    </div>
+                </div>
+                <p class="text-sm leading-relaxed" style="color: var(--text); opacity: 0.85;">${v.text}</p>
+            `;
+            container.appendChild(card);
+        });
+
+        // नेविगेशन बटन
+        document.getElementById('prevBtn').disabled = currentIndex <= 0;
+        document.getElementById('nextBtn').disabled = currentIndex >= list.length - 1;
+
+        // ऑडियो रीसेट
+        stopAudio();
+
+        // प्रीव्यू कैनवास अपडेट
+        renderPreviewCanvas('warm');
+
+        // फेड-इन एनिमेशन
+        requestAnimationFrame(() => {
+            document.querySelectorAll('.fade-in').forEach(el => {
+                el.classList.add('visible');
+            });
+        });
+    }
+
+    // ===== नेविगेशन =====
+    function navigate(dir) {
+        const list = richaDB[currentVed];
+        const newIndex = currentIndex + dir;
+        if (newIndex < 0 || newIndex >= list.length) return;
+        currentIndex = newIndex;
+
+        // फेड-आउट इफेक्ट
+        document.querySelectorAll('.fade-in').forEach(el => el.classList.remove('visible'));
+        setTimeout(() => updateUI(), 200);
+    }
+
+    function randomRicha() {
+        // सभी वेदों से रैंडम
+        const allVeds = Object.keys(richaDB);
+        const randomVed = allVeds[Math.floor(Math.random() * allVeds.length)];
+        const randomIndex = Math.floor(Math.random() * richaDB[randomVed].length);
+        currentVed = randomVed;
+        currentIndex = randomIndex;
+
+        // टैब अपडेट
+        document.querySelectorAll('.ved-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.ved === currentVed);
+        });
+
+        document.querySelectorAll('.fade-in').forEach(el => el.classList.remove('visible'));
+        setTimeout(() => updateUI(), 200);
+    }
+
+    // ===== वेद टैब =====
+    document.querySelectorAll('.ved-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const ved = tab.dataset.ved;
+            if (richaDB[ved].length === 0) {
+                showToast('इस वेद की ऋचाएँ शीघ्र जोड़ी जाएँगी');
+                return;
+            }
+            currentVed = ved;
+            currentIndex = 0;
+            document.querySelectorAll('.ved-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            document.querySelectorAll('.fade-in').forEach(el => el.classList.remove('visible'));
+            setTimeout(() => updateUI(), 200);
+        });
     });
-  } else {
-    h += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px">`;
-    slotsForDate.forEach(({md,sd,col,arr})=>{
-      const cls=bCC(arr), ic=cls==='sc-e'?'⚪':cls==='sc-h'?'🟡':'🔴';
-      const ms=arr.filter(f=>f.st==='missing').length;
-      h+=`<button class="sc ${cls}" onclick="bOSlot(${md},${sd==null?'null':sd},'${esc(col)}','date')">
-        <div style="display:flex;align-items:center;gap:4px"><div class="scol">${col}</div><span>${ic}</span></div>
-        ${sd!=null?`<div class="ssub">sub:${sd}</div>`:''}
-        <div class="scnt">${arr.length} files</div>
-        ${ms>0?`<div class="smiss">⚠ ${ms} missing</div>`:''}
-      </button>`;
+
+    // ===== ऑडियो सिंथेसिस =====
+    function createOscillator(freq, type, gainVal, startTime, duration) {
+        if (!audioContext) return;
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, startTime);
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(gainVal, startTime + 0.05);
+        gain.gain.linearRampToValueAtTime(gainVal * 0.7, startTime + duration * 0.5);
+        gain.gain.linearRampToValueAtTime(0, startTime + duration);
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+        audioNodes.push(osc);
+    }
+
+    function playChantAudio() {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioContext.state === 'suspended') audioContext.resume();
+
+        const richa = getCurrentRicha();
+        if (!richa) return;
+
+        // ऋचा से आवृत्तियाँ बनाएँ
+        const text = richa.devanagari;
+        const chars = text.replace(/[।॥\s]/g, '').split('');
+        audioNodes = [];
+
+        const baseFreq = 220; // A3
+        const now = audioContext.currentTime + 0.1;
+        let t = now;
+        const noteDuration = 0.35;
+
+        // वैदिक स्वर स्केल (शुद्ध, कोमल, तीव्र)
+        const scale = [0, 1.122, 1.335, 1.498, 1.682, 2.0, 2.245, 2.52, 2.670, 2.997, 3.364];
+
+        // स्वर-मैपिंग: अ-उ = निचले स्वर, ऋ-ॠ = मध्य, ए-औ = ऊँचे
+        const charFreqMap = {};
+        'अआइईउऊऋएऐओऔ'.split('').forEach((c, i) => {
+            charFreqMap[c] = scale[Math.min(i, scale.length - 1)];
+        });
+
+        // विशेष स्वर
+        charFreqMap['ं'] = 1.0;
+        charFreqMap['ः'] = 0.9;
+
+        let prevMult = 1.0;
+
+        chars.forEach((char, i) => {
+            const mult = charFreqMap[char] || (0.8 + (char.charCodeAt(0) % 7) * 0.3);
+            const freq = baseFreq * mult;
+
+            // मुख्य टोन
+            createOscillator(freq, 'sine', 0.12, t, noteDuration);
+
+            // हार्मोनिक्स
+            createOscillator(freq * 2, 'sine', 0.03, t, noteDuration * 0.8);
+            createOscillator(freq * 3, 'sine', 0.01, t, noteDuration * 0.5);
+
+            // तानपुरा-जैसा ड्रोन (कुछ नोट्स पर)
+            if (i % 3 === 0) {
+                createOscillator(baseFreq, 'triangle', 0.04, t, noteDuration * 1.5);
+                createOscillator(baseFreq * 1.5, 'triangle', 0.02, t, noteDuration * 1.5);
+            }
+
+            // विराम (दंड) पर लंबा विराम
+            const origText = richa.devanagari;
+            const posMap = [];
+            let ci = 0;
+            for (let j = 0; j < origText.length && posMap.length < chars.length; j++) {
+                if (origText[j] !== ' ' && origText[j] !== '।' && origText[j] !== '॥') {
+                    posMap.push(j);
+                }
+            }
+
+            let gap = noteDuration * 0.9;
+            if (posMap[i] !== undefined) {
+                // दंड (।) के बाद विराम
+                if (origText[posMap[i] + 1] === '।' || origText[posMap[i] + 2] === '।') {
+                    gap = noteDuration * 3;
+                }
+                // द्विदंड (॥) के बाद बड़ा विराम
+                if (origText.indexOf('॥', posMap[i]) === posMap[i] + 1 || origText.indexOf('॥', posMap[i]) === posMap[i] + 2) {
+                    gap = noteDuration * 6;
+                }
+            }
+
+            t += gap;
+            prevMult = mult;
+        });
+
+        audioStartTime = now;
+        audioDuration = t - now;
+        document.getElementById('totalTime').textContent = formatTime(audioDuration);
+
+        // प्रोग्रेस अपडेट
+        progressInterval = setInterval(updateProgress, 100);
+
+        // ऑडियो खत्म होने पर
+        setTimeout(() => {
+            if (isPlaying) stopAudio();
+        }, audioDuration * 1000 + 200);
+    }
+
+    function toggleAudio() {
+        if (isPlaying) {
+            stopAudio();
+        } else {
+            isPlaying = true;
+            document.getElementById('playBtn').classList.add('playing');
+            document.getElementById('playIcon').className = 'fas fa-pause';
+            document.querySelectorAll('.wave-bar').forEach(bar => bar.classList.add('active'));
+            playChantAudio();
+        }
+    }
+
+    function stopAudio() {
+        isPlaying = false;
+        document.getElementById('playBtn').classList.remove('playing');
+        document.getElementById('playIcon').className = 'fas fa-play';
+        document.querySelectorAll('.wave-bar').forEach(bar => bar.classList.remove('active'));
+        document.getElementById('progressFill').style.width = '0%';
+        document.getElementById('currentTime').textContent = '0:00';
+
+        if (progressInterval) {
+            clearInterval(progressInterval);
+            progressInterval = null;
+        }
+
+        audioNodes.forEach(node => {
+            try { node.stop(); } catch(e) {}
+        });
+        audioNodes = [];
+    }
+
+    function updateProgress() {
+        if (!audioContext || !isPlaying) return;
+        const elapsed = audioContext.currentTime - audioStartTime;
+        const pct = Math.min((elapsed / audioDuration) * 100, 100);
+        document.getElementById('progressFill').style.width = pct + '%';
+        document.getElementById('currentTime').textContent = formatTime(Math.min(elapsed, audioDuration));
+    }
+
+    function seekAudio(e) {
+        // सीक फंक्शन (सिंथेसिस्ड ऑडियो में सीमित)
+        showToast('सिंथेसिस्ड ऑडियो में सीक समर्थित नहीं');
+    }
+
+    function formatTime(sec) {
+        const m = Math.floor(sec / 60);
+        const s = Math.floor(sec % 60);
+        return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    // ===== वेवफॉर्म बार्स बनाएँ =====
+    function createWaveformBars() {
+        const container = document.getElementById('waveform');
+        container.innerHTML = '';
+        for (let i = 0; i < 20; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'wave-bar';
+            bar.style.height = '4px';
+            bar.style.animationDelay = `${i * 0.08}s`;
+            container.appendChild(bar);
+        }
+    }
+
+    // ===== बैकग्राउंड कैनवास (पार्टिकल्स) =====
+    function initBackground() {
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+        let w, h;
+        const particles = [];
+        const particleCount = 60;
+
+        function resize() {
+            w = canvas.width = window.innerWidth;
+            h = canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        // पार्टिकल्स बनाएँ
+        for (let i = 0; i < particleCount; i++) {
+            particles.push({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                r: Math.random() * 2 + 0.5,
+                vx: (Math.random() - 0.5) * 0.3,
+                vy: -Math.random() * 0.4 - 0.1,
+                alpha: Math.random() * 0.5 + 0.1,
+                pulse: Math.random() * Math.PI * 2
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, w, h);
+
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.pulse += 0.02;
+
+                // स्क्रीन से बाहर जाने पर वापस
+                if (p.y < -10) { p.y = h + 10; p.x = Math.random() * w; }
+                if (p.x < -10) p.x = w + 10;
+                if (p.x > w + 10) p.x = -10;
+
+                const a = p.alpha * (0.5 + 0.5 * Math.sin(p.pulse));
+                const r = Math.max(0.1, p.r);
+
+                // ग्लो
+                const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 4);
+                grad.addColorStop(0, `rgba(212, 160, 60, ${a})`);
+                grad.addColorStop(0.5, `rgba(180, 120, 30, ${a * 0.3})`);
+                grad.addColorStop(1, `rgba(180, 120, 30, 0)`);
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, r * 4, 0, Math.PI * 2);
+                ctx.fillStyle = grad;
+                ctx.fill();
+
+                // कोर
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(240, 200, 100, ${a * 0.8})`;
+                ctx.fill();
+            });
+
+            requestAnimationFrame(draw);
+        }
+        draw();
+    }
+
+    // ===== प्रीव्यू कैनवास (डाउनलोड इमेज) =====
+    function renderPreviewCanvas(theme) {
+        const canvas = document.getElementById('previewCanvas');
+        const ctx = canvas.getContext('2d');
+        const W = 540, H = 720;
+        canvas.width = W;
+        canvas.height = H;
+
+        const richa = getCurrentRicha();
+        if (!richa) return;
+
+        // बैकग्राउंड
+        let bgGrad;
+        if (theme === 'warm') {
+            bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+            bgGrad.addColorStop(0, '#1a0800');
+            bgGrad.addColorStop(0.4, '#2a1005');
+            bgGrad.addColorStop(0.7, '#1a0800');
+            bgGrad.addColorStop(1, '#0d0400');
+        } else if (theme === 'dark') {
+            bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+            bgGrad.addColorStop(0, '#050510');
+            bgGrad.addColorStop(0.5, '#0a0820');
+            bgGrad.addColorStop(1, '#030308');
+        } else {
+            bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+            bgGrad.addColorStop(0, '#1a1400');
+            bgGrad.addColorStop(0.3, '#2a2000');
+            bgGrad.addColorStop(0.6, '#1a1400');
+            bgGrad.addColorStop(1, '#100c00');
+        }
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, W, H);
+
+        // सजावटी सर्कल
+        const centerX = W / 2;
+        const centerY = 200;
+        const accentColor = theme === 'dark' ? '#4060a0' : '#d4a03c';
+
+        for (let i = 3; i >= 1; i--) {
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 60 + i * 30, 0, Math.PI * 2);
+            ctx.strokeStyle = accentColor + (i === 1 ? '30' : '15');
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+
+        // ॐ चिह्न
+        ctx.font = '48px "Tiro Devanagari Hindi", serif';
+        ctx.fillStyle = accentColor + '80';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('ॐ', centerX, centerY);
+
+        // सजावटी लाइनें
+        ctx.strokeStyle = accentColor + '30';
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i < 5; i++) {
+            ctx.beginPath();
+            ctx.moveTo(40 + i * 5, 300);
+            ctx.lineTo(W - 40 - i * 5, 300);
+            ctx.stroke();
+        }
+
+        // वेद नाम
+        const vedName = currentVed === 'rigveda' ? 'ऋग्वेद' :
+                        currentVed === 'yajurveda' ? 'यजुर्वेद' :
+                        currentVed === 'samaveda' ? 'सामवेद' : 'अथर्ववेद';
+        ctx.font = '600 14px "Noto Sans Devanagari", sans-serif';
+        ctx.fillStyle = accentColor + 'aa';
+        ctx.fillText(vedName + ' — मंडल ' + richa.mandal + (richa.sukta !== '-' ? ' | सूक्त ' + richa.sukta : '') + ' | मंत्र ' + richa.mantra, centerX, 330);
+
+        // संस्कृत ऋचा
+        ctx.font = '26px "Tiro Devanagari Hindi", serif';
+        ctx.fillStyle = theme === 'dark' ? '#a0b0e0' : '#f0c040';
+
+        const lines = wrapText(ctx, richa.devanagari, W - 80);
+        let y = 390;
+        lines.forEach(line => {
+            ctx.fillText(line, centerX, y);
+            y += 42;
+        });
+
+        // निचली सजावटी लाइनें
+        const bottomY = y + 20;
+        ctx.strokeStyle = accentColor + '30';
+        for (let i = 0; i < 5; i++) {
+            ctx.beginPath();
+            ctx.moveTo(40 + i * 5, bottomY);
+            ctx.lineTo(W - 40 - i * 5, bottomY);
+            ctx.stroke();
+        }
+
+        // पहली व्याख्या (शंकराचार्य)
+        const firstVyakhya = richa.vyakhya[0];
+        ctx.font = '600 12px "Noto Sans Devanagari", sans-serif';
+        ctx.fillStyle = firstVyakhya.color + 'cc';
+        ctx.textAlign = 'left';
+        ctx.fillText('— ' + firstVyakhya.guru, 50, bottomY + 30);
+
+        ctx.font = '13px "Noto Sans Devanagari", sans-serif';
+        ctx.fillStyle = '#c0b0a0';
+        const vyakhyaLines = wrapText(ctx, firstVyakhya.text, W - 100);
+        let vy = bottomY + 55;
+        vyakhyaLines.slice(0, 4).forEach(line => {
+            ctx.fillText(line, 50, vy);
+            vy += 22;
+        });
+        if (vyakhyaLines.length > 4) {
+            ctx.fillStyle = '#8a7560';
+            ctx.fillText('...', 50, vy);
+        }
+
+        // फुटर
+        ctx.textAlign = 'center';
+        ctx.font = '11px "Noto Sans Devanagari", sans-serif';
+        ctx.fillStyle = '#5a4a3a';
+        ctx.fillText('ॐ शान्तिः शान्तिः शान्तिः', centerX, H - 40);
+        ctx.font = '10px "Noto Sans Devanagari", sans-serif';
+        ctx.fillStyle = '#3a3028';
+        const today = new Date();
+        ctx.fillText(today.toLocaleDateString('hi-IN'), centerX, H - 22);
+    }
+
+    function wrapText(ctx, text, maxWidth) {
+        const words = text.split(' ');
+        const lines = [];
+        let currentLine = '';
+
+        words.forEach(word => {
+            const testLine = currentLine ? currentLine + ' ' + word : word;
+            const metrics = ctx.measureText(testLine);
+            if (metrics.width > maxWidth && currentLine) {
+                lines.push(currentLine);
+                currentLine = word;
+            } else {
+                currentLine = testLine;
+            }
+        });
+        if (currentLine) lines.push(currentLine);
+        return lines;
+    }
+
+    // ===== डाउनलोड इमेज =====
+    function downloadImage(theme) {
+        renderPreviewCanvas(theme);
+        const canvas = document.getElementById('previewCanvas');
+        canvas.style.display = 'block';
+
+        // स्क्रॉल करके दिखाएँ
+        canvas.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        setTimeout(() => {
+            const link = document.createElement('a');
+            const richa = getCurrentRicha();
+            link.download = `vedic-richa-${richa.id}-${theme}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showToast('छवि डाउनलोड हो रही है...');
+        }, 500);
+    }
+
+    // ===== शेयर / कॉपी =====
+    function shareRicha() {
+        const richa = getCurrentRicha();
+        if (!richa) return;
+        const text = `ॐ ${richa.devanagari}\n\n— वैदिक ऋचा (दैनिक वेद अध्ययन)`;
+
+        if (navigator.share) {
+            navigator.share({ title: 'वैदिक ऋचा', text: text }).catch(() => {});
+        } else {
+            copyToClipboard(text);
+        }
+    }
+
+    function copyRicha() {
+        const richa = getCurrentRicha();
+        if (!richa) return;
+        const text = `ॐ ${richa.devanagari}\n\nपद-पद अर्थ: ${richa.wordMeaning}\n\n— वैदिक ऋचा (दैनिक वेद अध्ययन)`;
+        copyToClipboard(text);
+    }
+
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('ऋचा कॉपी हो गई!');
+        }).catch(() => {
+            // फॉलबैक
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('ऋचा कॉपी हो गई!');
+        });
+    }
+
+    // ===== टोस्ट =====
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    // ===== स्क्रॉल एनिमेशन =====
+    function initScrollAnimations() {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+    }
+
+    // ===== कीबोर्ड नेविगेशन =====
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') navigate(-1);
+        if (e.key === 'ArrowRight') navigate(1);
+        if (e.key === ' ') { e.preventDefault(); toggleAudio(); }
     });
-    h += `</div>`;
-  }
-  if(!slotsForDate.length) h='<div class="bempty">Is date mein koi slot nahi.</div>';
-  document.getElementById('bdd-cols').innerHTML = h;
 
-  // Show date view
-  document.querySelectorAll('.bnb').forEach(b=>b.classList.remove('on'));
-  document.querySelectorAll('.bview').forEach(el=>el.classList.remove('on'));
-  document.getElementById('bview-date').classList.add('on');
-}
+    // ===== इनिशियलाइज़ =====
+    function init() {
+        // आज की ऋचा
+        const dayIndex = getTodayIndex();
+        const totalRichas = Object.values(richaDB).reduce((sum, list) => sum + list.length, 0);
+        let remaining = dayIndex % totalRichas;
 
-// ── Slot detail (files in col) ──
-function bOSlot(md,sd,col,backView){
-  bSlot={md,sd,col};
-  document.getElementById('bsd-back').onclick = ()=>{ if(backView==='date') bOpenDate(md); else swBV('grid'); };
-  bRenderSlot();
-  document.querySelectorAll('.bview').forEach(el=>el.classList.remove('on'));
-  document.getElementById('bview-slot').classList.add('on');
-}
-function bRenderSlot(){
-  if(!bSlot)return;
-  const arr=(bSM()[bSK(bSlot.md,bSlot.sd,bSlot.col)]||[]);
-  document.getElementById('bsd-t').textContent=`Date ${bSlot.md}${bSlot.sd!=null?'/'+bSlot.sd:''} — Col ${dispCol(bSlot.col)}`;
-  document.getElementById('bsd-s').textContent=arr.length+' files';
-  document.getElementById('bsd-c').innerHTML=arr.length?arr.map(f=>bFCHTML(f,false)).join(''):'<div class="bempty">Koi file nahi.</div>';
-}
+        // वेद चुनें
+        for (const [ved, list] of Object.entries(richaDB)) {
+            if (remaining < list.length) {
+                currentVed = ved;
+                currentIndex = remaining;
+                break;
+            }
+            remaining -= list.length;
+        }
 
-// ── Add form ──
-function bRenderAdd(){
-  bBDG('b-mdg', bAMD, d=>{ bAMD=d; bRenderColButtons(); bRenderAdd(); });
-  if(bASD!==null){ const el=document.getElementById('b-sdg'); if(el) bBDG('b-sdg',bASD,d=>{ bASD=d; bRenderAdd(); }); }
-  bUpdateSP(); bUpdateST();
-}
-function bEnableSD(){
-  bASD=1;
-  document.getElementById('b-sds').innerHTML='<div class="dgrid" id="b-sdg"></div>';
-  document.getElementById('b-sdc').style.display='inline-block';
-  bBDG('b-sdg',bASD,d=>{ bASD=d; bRenderAdd(); });
-  bUpdateSP(); bUpdateST();
-}
-function bClearSD(){
-  bASD=null;
-  document.getElementById('b-sds').innerHTML='<button class="sdadd" onclick="bEnableSD()">+ Sub-Date add karo (overflow)</button>';
-  document.getElementById('b-sdc').style.display='none';
-  bUpdateSP(); bUpdateST();
-}
-function bUpdateSP(){
-  const ex=(bSM()[bSK(bAMD,bASD,bAC)]||[]);
-  document.getElementById('b-sp-t').textContent=`Date ${bAMD}${bASD!=null?'/'+bASD:''} — Col ${dispCol(bAC)}`;
-  document.getElementById('b-sp-c').textContent=`(${ex.length} files)`;
-  const eb=document.getElementById('b-exbox'),et=document.getElementById('b-extags');
-  if(ex.length){
-    eb.style.display='block';
-    et.innerHTML=ex.map(f=>`<span class="etag${f.st==='missing'?' miss':''}">${esc(f.id)}${f.st==='missing'?' ⚠':''}</span>`).join('');
-  } else eb.style.display='none';
-}
-function bUpdateST(){
-  const el=document.getElementById('scan-ml');
-  if(el&&scanCtx==='bundle') el.textContent=`📷 Bundle → Date ${bAMD}${bASD!=null?'/'+bASD:''} ${dispCol(bAC)}`;
-}
-
-// ── Add file (all 3 rules) ──
-async function bAddFile(rawId, fromScan){
-  const id=rawId.trim().toUpperCase(); if(!id) return false;
-
-  if(fromScan){
-    const rec=getCFMRecord(id);
-    if(!rec){ showSC('❌ CFM mein nahi hai: '+id,'#e03030'); soundError(); return false; }
-  }
-
-  if(bFiles[id]&&!bFiles[id].hidden){
-    const ex=bFiles[id];
-    const msg=`"${id}" pehle se: Date ${ex.md}${ex.sd!=null?'/'+ex.sd:''} — ${dispCol(ex.col)}. Pehle hatao.`;
-    fromScan?showSC(msg,'#e03030'):showToast(msg,'d');
-    soundAlready(); return false;
-  }
-
-  if(fromScan){
-    const cfmDay=getCFMDay(id);
-    if(cfmDay!==null && cfmDay!==bAMD && bASD===null){
-      openMismatchModal(id, cfmDay); return false;
+        createWaveformBars();
+        initBackground();
+        updateUI();
+        initScrollAnimations();
     }
-  }
 
-  const obj={id,md:bAMD,sd:bASD,col:bAC,at:Date.now(),st:'placed',hidden:false};
-  bFiles[id]=obj; await idbSBn(obj);
-  const sl=`${bAMD}${bASD!=null?'/'+bASD:''}-${dispCol(bAC)}`;
-  if(fromScan){ showSC('✅ '+id+' → Date '+sl,'#18a558'); soundSent(); }
-  else showToast('✅ '+id+' → '+sl);
-  bUpdateSP(); bRenderGrid();
-  return true;
-}
-
-function bMKey(e){
-  if(e.key==='Enter'){
-    e.preventDefault();
-    document.getElementById('b-mi').value.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean).forEach(p=>bAddFile(p,false));
-    document.getElementById('b-mi').value='';
-  }
-}
-function bMAdd(){
-  document.getElementById('b-mi').value.split(/,/).map(s=>s.trim()).filter(Boolean).forEach(p=>bAddFile(p,false));
-  document.getElementById('b-mi').value='';
-}
-
-// ── Scanner ──
-function startBundleScan(){
-  bUpdateST();
-  openScan('bundle',`📷 Bundle → Date ${bAMD}${bASD!=null?'/'+bASD:''} ${dispCol(bAC)}`,true);
-}
-function handleBundleScan(dec){ bAddFile(dec,true); if(scanActive) bUpdateST(); }
-
-// ── Mismatch modal ──
-function openMismatchModal(id, cfmDay){
-  mmPending={id,cfmDay}; mmSD=1;
-  document.getElementById('mm-title').textContent=`⚠ Case: ${id}`;
-  document.getElementById('mm-body').textContent=`CFM next date day = ${cfmDay}, aap Date ${bAMD} mein rakh rahe ho. Mismatch!`;
-  function rebuildMMSDG(){ bBDG('mm-sdg',mmSD,d=>{ mmSD=d; document.getElementById('mm-prev').textContent=`Date ${bAMD}/${d} — ${dispCol(bAC)}`; rebuildMMSDG(); }); }
-  rebuildMMSDG();
-  document.getElementById('mm-prev').textContent=`Date ${bAMD}/${mmSD} — ${dispCol(bAC)}`;
-  document.getElementById('mmModal').classList.add('on');
-}
-async function confirmMismatch(){
-  const id=mmPending.id, prevSD=bASD;
-  bASD=mmSD;
-  const obj={id,md:bAMD,sd:bASD,col:bAC,at:Date.now(),st:'placed',hidden:false};
-  bFiles[id]=obj; await idbSBn(obj);
-  showSC('✅ '+id+` → Date ${bAMD}/${bASD}-${dispCol(bAC)}`,'#18a558');
-  soundSent();
-  bUpdateSP(); bRenderGrid();
-  bASD=prevSD;
-  document.getElementById('mmModal').classList.remove('on');
-  mmPending={id:'',cfmDay:0};
-}
-function cancelMismatch(){
-  document.getElementById('mmModal').classList.remove('on');
-  mmPending={id:'',cfmDay:0};
-  showSC('❌ Scan reject: date mismatch','#e03030');
-}
-
-// ── File actions ──
-async function bSetStatus(id,st){
-  if(!bFiles[id])return;
-  bFiles[id].st=st; await idbSBn(bFiles[id]);
-  showToast(st==='missing'?'⚠ Missing: '+id:'✅ Restored: '+id, st==='missing'?'w':'');
-  bRenderGrid(); if(bSlot)bRenderSlot(); bRenderSearch();
-}
-async function bUnhide(id){
-  if(!bFiles[id])return;
-  bFiles[id].hidden=false; await idbSBn(bFiles[id]);
-  showToast('✅ '+id+' wapas dikhaya'); bRenderGrid(); bRenderSearch();
-}
-async function bDelFile(id){
-  delete bFiles[id]; await idbDB(id);
-  showToast('Hata diya: '+id,'d');
-  bRenderGrid(); if(bSlot)bRenderSlot(); bRenderSearch();
-}
-
-// ── Move modal ──
-function bOpenMove(id){
-  bMoveId=id; const f=bFiles[id];
-  bMMD=f.md; bMSD=f.sd!=null?f.sd:null; bMC=f.col;
-  document.getElementById('bm-fid').textContent=id;
-  bRenderMoveForm();
-  document.getElementById('bmModal').classList.add('on');
-}
-function closeBMModal(){ document.getElementById('bmModal').classList.remove('on'); bMoveId=null; }
-document.getElementById('bmModal').addEventListener('click',function(e){ if(e.target===this)closeBMModal(); });
-
-function bRenderMoveForm(){
-  bBDG('bm-mdg',bMMD,d=>{ bMMD=d; bBuildMoveCR(); bRenderMoveForm(); });
-  bBuildMoveCR();
-  const sec=document.getElementById('bm-sds');
-  if(bMSD!==null){
-    if(!document.getElementById('bm-sdg')){
-      sec.innerHTML='<div class="dgrid" id="bm-sdg"></div>';
-      document.getElementById('bm-sdc').style.display='inline-block';
+    // DOM तैयार होने पर
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
     }
-    bBDG('bm-sdg',bMSD,d=>{ bMSD=d; bRenderMoveForm(); });
-  } else {
-    sec.innerHTML='<button class="sdadd" onclick="bmEnableSD()">+ Sub-Date add karo</button>';
-    document.getElementById('bm-sdc').style.display='none';
-  }
-  bUpdateMP();
-}
-function bmEnableSD(){ bMSD=1; document.getElementById('bm-sds').innerHTML='<div class="dgrid" id="bm-sdg"></div>'; document.getElementById('bm-sdc').style.display='inline-block'; bBDG('bm-sdg',bMSD,d=>{ bMSD=d; bRenderMoveForm(); }); bUpdateMP(); }
-function bmClearSD(){ bMSD=null; document.getElementById('bm-sds').innerHTML='<button class="sdadd" onclick="bmEnableSD()">+ Sub-Date add karo</button>'; document.getElementById('bm-sdc').style.display='none'; bUpdateMP(); }
-function bUpdateMP(){ document.getElementById('bm-prev').textContent=`Date ${bMMD}${bMSD!=null?'/'+bMSD:''} — ${dispCol(bMC)}`; }
-
-async function doBundleMove(){
-  if(!bMoveId)return;
-  bFiles[bMoveId].md=bMMD; bFiles[bMoveId].sd=bMSD; bFiles[bMoveId].col=bMC;
-  await idbSBn(bFiles[bMoveId]);
-  showToast(`✅ Moved → Date ${bMMD}${bMSD!=null?'/'+bMSD:''}-${dispCol(bMC)}`);
-  closeBMModal(); bRenderGrid();
-  if(bSlot){ bSlot=null; swBV('grid'); }
-  bRenderSearch();
-}
-
-// ── Search ──
-function bRenderSearch(){
-  const q=document.getElementById('b-si').value.trim().toLowerCase();
-  const res=document.getElementById('b-sr');
-  const allV=Object.values(bFiles);
-  // Missing: only files with missing tag (not hidden)
-  const miss=allV.filter(f=>f.st==='missing'&&!f.hidden);
-  const tot=allV.filter(f=>!f.hidden).length;
-
-  if(q){
-    const r=allV.filter(f=>f.id.toLowerCase().includes(q));
-    res.innerHTML=r.length?r.map(f=>bFCHTML(f,true)).join(''):'<div class="nores">❌ "'+esc(q)+'" nahi mili</div>';
-    return;
-  }
-  if(miss.length){
-    res.innerHTML='<div style="color:var(--dan);font-weight:700;margin-bottom:10px">⚠ Missing Files ('+miss.length+')</div>'+miss.map(f=>bFCHTML(f,true)).join('');
-    return;
-  }
-  res.innerHTML=tot?'<div style="color:var(--suc);font-size:13px;text-align:center;margin-top:30px;font-weight:600">✅ Koi missing nahi</div>':'<div class="bempty">Koi file add nahi ki abhi.</div>';
-}
-
-// ── File card HTML ──
-function bFCHTML(f,showLoc){
-  const id=esc(f.id), isHidden=f.hidden;
-  return `<div class="bfc${f.st==='missing'?' miss':''}">
-    <div class="bfch">
-      <span class="bfid">${id}</span>
-      <div style="display:flex;gap:5px;align-items:center">
-        ${isHidden?'<span style="background:#dcfce7;color:#15803d;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:700">SENT ✓</span>':''}
-        ${f.st==='missing'?'<span class="mbadge">⚠ MISSING</span>':''}
-      </div>
-    </div>
-    ${showLoc?`<div class="bloc">📍 Date ${f.md}${f.sd!=null?'/'+f.sd:''} — Col <strong>${dispCol(f.col)}</strong>${isHidden?' <em style="color:var(--suc);font-size:11px">(SENT)</em>':''}</div>`:''}
-    <div class="bact">
-      ${isHidden
-        ?`<button class="smb" style="background:#e8eeff;color:var(--p);border:1px solid #c4b5fd" onclick="bUnhide('${id}')">👁 Wapas Dikhao</button>`
-        :f.st!=='missing'
-          ?`<button class="smb" style="background:#d9770614;color:var(--ambh);border:1px solid #d9770640" onclick="bSetStatus('${id}','missing')">Missing</button>`
-          :`<button class="smb" style="background:#10b98114;color:var(--suc);border:1px solid #10b98140" onclick="bSetStatus('${id}','placed')">Wapas Mili</button>`
-      }
-      ${!isHidden?`<button class="smb" style="background:#0e7ac414;color:var(--inf);border:1px solid #0e7ac440" onclick="bOpenMove('${id}')">⇄ Move</button>`:''}
-      <button class="smb" style="background:#ef444414;color:var(--dan);border:1px solid #ef444440" onclick="bDelFile('${id}')">Hatao</button>
-    </div>
-  </div>`;
-}
-
-</script>
-
-<!-- Download Format Modal -->
-<div class="modal center" id="dl-modal">
-  <div class="msh" style="max-width:340px">
-    <div class="mt">📥 Download Format Choose Karo</div>
-    <div class="msub">Kaun sa format chahiye?</div>
-
-    <button class="btn btn-s" onclick="doDownload('csv')" style="margin-top:8px">
-      📄 CSV — Sabse compatible<br>
-      <span style="font-size:11px;font-weight:400;opacity:.85">Bina kisi app ke khulta hai ✅</span>
-    </button>
-
-    <button class="btn" onclick="doDownload('xlsx')" style="margin-top:10px">
-      📊 Excel (.xlsx)<br>
-      <span style="font-size:11px;font-weight:400;opacity:.85">WPS Office / Google Sheets chahiye</span>
-    </button>
-
-    <div style="background:#fff7ed;border:1px solid #f59e0b;border-radius:8px;padding:10px 12px;margin-top:12px;font-size:12px;color:#92400e">
-      💡 <strong>Tip:</strong> Pehli baar <strong>CSV</strong> try karo — seedha khul jaata hai.<br>
-      Excel ke liye <strong>WPS Office</strong> free mein install karo.
-    </div>
-
-    <button class="btn btn-g" onclick="closeDLModal()" style="margin-top:10px">Cancel</button>
-  </div>
-</div>
+    </script>
 </body>
 </html>
